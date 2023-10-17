@@ -48,7 +48,7 @@ func (uc UserController) Get(c *fiber.Ctx) error {
  */
 func (uc UserController) Create(c *fiber.Ctx) error {
 
-	bodyUser, err, validationErrs := uc.parseAndValidate(c)
+	bodyUser, err, validationErrs := uc.parseAndValidate(c.BodyParser)
 	if validationErrs != nil {
 		json_res := map[string]interface{}{
 			"error":            "Validation Error",
@@ -85,7 +85,7 @@ func (uc UserController) Update(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(json_res)
 	}
 
-	bodyUser, err, validationErrs := uc.parseAndValidate(c)
+	bodyUser, err, validationErrs := uc.parseAndValidate(c.BodyParser)
 	if validationErrs != nil {
 		json_res := map[string]interface{}{
 			"error":            "Validation Error",
@@ -111,12 +111,14 @@ func (uc UserController) Delete(c *fiber.Ctx) error {
 
 // Util methods
 
-func (uc UserController) parseAndValidate(c *fiber.Ctx) (
+type parserFunc func(out interface{}) error
+
+func (uc UserController) parseAndValidate(parser parserFunc) (
 	*UserModel, error, *[]core.ValidationErrorResponse,
 ) {
 	bodyUser := &UserModel{}
 
-	if err := c.BodyParser(bodyUser); err != nil {
+	if err := parser(bodyUser); err != nil {
 		return nil, err, nil
 	}
 
