@@ -3,7 +3,7 @@ package users
 type UserModel struct {
 	Id       int    `db:"id" json:"user_id"`
 	Username string `db:"username" json:"username" validate:"email,required"`
-	Name     string `db:"name" json:"name" validate:"required"`
+	Name     string `db:"name" json:"name" validate:"required,min=3,max=50"`
 	Password string `db:"password" json:"-"`
 }
 
