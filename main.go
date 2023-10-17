@@ -18,6 +18,7 @@ func SetUserRoutes(r *fiber.Router, db *sqlx.DB, v *validator.Validate) {
 	(*r).Post("/", userController.Create)
 	(*r).Get("/:id<int>", userController.Get)
 	(*r).Put("/:id<int>", userController.Update)
+	(*r).Delete("/:id<int>", userController.Delete)
 }
 
 func main() {
@@ -35,5 +36,5 @@ func main() {
 	UserRouter := app.Group("/users")
 	SetUserRoutes(&UserRouter, db, v)
 
-	log.Fatal(app.Listen(":8000"))
+	log.Fatalln(app.Listen(":8000"))
 }

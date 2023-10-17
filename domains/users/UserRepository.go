@@ -1,33 +1,50 @@
 package users
 
 import (
+	"gochatws/core"
+	"strconv"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
 )
 
 type UserRepository struct {
-	db       *sqlx.DB
-	validate *validator.Validate
+	db *sqlx.DB
+	v  *validator.Validate
 }
 
 func NewUserRepo(db *sqlx.DB, v *validator.Validate) *UserRepository {
-	return &UserRepository{db: db, validate: v}
+	return &UserRepository{db: db, v: v}
 }
 
 func (ur UserRepository) getModel() *UserModel {
 	return &UserModel{}
 }
 
-func (ur UserRepository) All() (*[]UserModel, error) {
-	var users []UserModel
-	err := ur.db.Select(&users, "SELECT * FROM User")
-	return &users, err
-}
-
 func (ur UserRepository) FindById(id int) (*UserModel, error) {
 	user := ur.getModel()
 	err := ur.db.Get(user, "SELECT * FROM User WHERE ID = $1", id)
 	return user, err
+}
+
+func (ur UserRepository) FindUserByIdParam(id string) (*UserModel, error) {
+	u := ur.getModel()
+
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, err
+	}
+	u, err = ur.FindById(idInt)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (ur UserRepository) Validate(parser parserFunc) (
+	*UserModel, error, *[]core.ValidationErrorResponse,
+) {
+	return ur.getModel().ParseAndValidate(parser, ur.v)
 }
 
 func (ur UserRepository) ExistsByUsername(username string) bool {
@@ -43,8 +60,10 @@ func (ur UserRepository) ExistsByUsername(username string) bool {
 	return false
 }
 
-func (ur UserRepository) Validate(u *UserModel) error {
-	return ur.validate.Struct(*u)
+func (ur UserRepository) All() (*[]UserModel, error) {
+	var users []UserModel
+	err := ur.db.Select(&users, "SELECT * FROM User")
+	return &users, err
 }
 
 func (ur UserRepository) Update(u *UserModel) error {

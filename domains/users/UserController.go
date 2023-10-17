@@ -1,9 +1,7 @@
 package users
 
 import (
-	"gochatws/core"
 	"net/http"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -32,7 +30,7 @@ func (uc UserController) All(c *fiber.Ctx) error {
 *
  */
 func (uc UserController) Get(c *fiber.Ctx) error {
-	dbUser, err := uc.findUserByIdParam(c.Params("id"))
+	dbUser, err := uc.userRepository.FindUserByIdParam(c.Params("id"))
 	if err != nil {
 		json_res := map[string]string{"error": "User Not Found"}
 		return c.Status(http.StatusNotFound).JSON(json_res)
@@ -48,21 +46,21 @@ func (uc UserController) Get(c *fiber.Ctx) error {
  */
 func (uc UserController) Create(c *fiber.Ctx) error {
 
-	bodyUser, err, validationErrs := uc.parseAndValidate(c.BodyParser)
+	bodyUser, err, validationErrs := uc.userRepository.Validate(c.BodyParser)
 	if validationErrs != nil {
 		json_res := map[string]interface{}{
 			"error":            "Validation Error",
 			"validationErrors": validationErrs,
 		}
-		return c.Status(400).JSON(json_res)
-
+		return c.Status(http.StatusBadRequest).JSON(json_res)
 	} else if err != nil {
 		json_res := map[string]string{"error": "Error deserializing JSON"}
-		return c.Status(400).JSON(json_res)
+		return c.Status(http.StatusBadRequest).JSON(json_res)
 	}
 
 	if uc.userRepository.ExistsByUsername(bodyUser.Username) == true {
-		return c.Status(400).JSON(map[string]string{"error": "Invalid username"})
+		json_res := map[string]string{"error": "Invalid username"}
+		return c.Status(http.StatusBadRequest).JSON(json_res)
 	}
 
 	uc.userRepository.Create(bodyUser)
@@ -79,13 +77,13 @@ func (uc UserController) Create(c *fiber.Ctx) error {
 func (uc UserController) Update(c *fiber.Ctx) error {
 	// TODO: Remove id Param and get the id of the authenticated user
 
-	dbUser, err := uc.findUserByIdParam(c.Params("id"))
+	dbUser, err := uc.userRepository.FindUserByIdParam(c.Params("id"))
 	if err != nil {
 		json_res := map[string]string{"error": err.Error()}
 		return c.Status(http.StatusBadRequest).JSON(json_res)
 	}
 
-	bodyUser, err, validationErrs := uc.parseAndValidate(c.BodyParser)
+	bodyUser, err, validationErrs := uc.userRepository.Validate(c.BodyParser)
 	if validationErrs != nil {
 		json_res := map[string]interface{}{
 			"error":            "Validation Error",
@@ -107,38 +105,4 @@ func (uc UserController) Update(c *fiber.Ctx) error {
 
 func (uc UserController) Delete(c *fiber.Ctx) error {
 	return nil
-}
-
-// Util methods
-
-type parserFunc func(out interface{}) error
-
-func (uc UserController) parseAndValidate(parser parserFunc) (
-	*UserModel, error, *[]core.ValidationErrorResponse,
-) {
-	bodyUser := &UserModel{}
-
-	if err := parser(bodyUser); err != nil {
-		return nil, err, nil
-	}
-
-	if err := uc.userRepository.Validate(bodyUser); err != nil {
-		return nil, err, core.BuildErrorResponse(err)
-	}
-
-	return bodyUser, nil, nil
-}
-
-func (uc UserController) findUserByIdParam(id string) (*UserModel, error) {
-	var u *UserModel
-
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return nil, err
-	}
-	u, err = uc.userRepository.FindById(idInt)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
 }
