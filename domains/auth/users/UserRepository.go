@@ -1,7 +1,7 @@
-package users
+package auth
 
 import (
-	"gochatws/core"
+	cerr "gochatws/core/errors"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
@@ -28,21 +28,19 @@ func (ur UserRepository) FindById(id int) (*UserModel, error) {
 }
 
 func (ur UserRepository) FindUserByIdParam(id string) (*UserModel, error) {
-	u := ur.getModel()
-
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return nil, err
 	}
-	u, err = ur.FindById(idInt)
+	foundUser, err := ur.FindById(idInt)
 	if err != nil {
 		return nil, err
 	}
-	return u, nil
+	return foundUser, nil
 }
 
 func (ur UserRepository) Validate(parser parserFunc) (
-	*UserModel, error, *[]core.ValidationErrorResponse,
+	*UserModel, error, *[]cerr.ValidationErrorResponse,
 ) {
 	return ur.getModel().ParseAndValidate(parser, ur.v)
 }
@@ -51,7 +49,7 @@ func (ur UserRepository) ExistsByUsername(username string) bool {
 	var exists int
 	_ = ur.db.Get(
 		&exists,
-		"SELECT COUNT(*) FROM User WHERE username = $1",
+		"SELECT EXISTS(SELECT 1 FROM User WHERE username = $1)",
 		username,
 	)
 	if exists > 0 {
@@ -81,7 +79,7 @@ func (ur UserRepository) Create(u *UserModel) error {
 		"INSERT INTO User (name, username, password) VALUES ($1, $2, $3)",
 		u.Name,
 		u.Username,
-		u.Id,
+		u.Password,
 	)
 	if err != nil {
 		return err

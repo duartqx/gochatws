@@ -1,7 +1,7 @@
-package users
+package auth
 
 import (
-	"gochatws/core"
+	cerr "gochatws/core/errors"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -26,7 +26,7 @@ func (u *UserModel) UpdateFromAnother(other *UserModel) {
 }
 
 func (u UserModel) ParseAndValidate(parser parserFunc, v *validator.Validate) (
-	*UserModel, error, *[]core.ValidationErrorResponse,
+	*UserModel, error, *[]cerr.ValidationErrorResponse,
 ) {
 	parsedUser := &UserModel{}
 
@@ -35,7 +35,7 @@ func (u UserModel) ParseAndValidate(parser parserFunc, v *validator.Validate) (
 	}
 
 	if err := v.Struct(parsedUser); err != nil {
-		return nil, err, core.BuildErrorResponse(err)
+		return nil, err, cerr.BuildErrorResponse(err)
 	}
 
 	return parsedUser, nil, nil
