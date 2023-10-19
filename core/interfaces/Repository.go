@@ -4,10 +4,12 @@ import (
 	cerr "gochatws/core/errors"
 )
 
+type M interface{}
+
 type Repository interface {
-	FindById(id int) (*Model, error)
-	Update(m *Model) error
-	Create(m *Model) error
-	All() (*[]Model, error)
-	Validate(p parserFunc) (*Model, error, *[]cerr.ValidationErrorResponse)
+	All() (*[]M, error)
+	Create(m *M) error
+	FindById(id int) (*M, error)
+	Update(m M) error
+	Validate(p ParserFunc) (*M, error, *[]cerr.ValidationErrorResponse)
 }
