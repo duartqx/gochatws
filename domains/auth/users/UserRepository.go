@@ -2,12 +2,13 @@ package auth
 
 import (
 	"encoding/gob"
-	cerr "gochatws/core/errors"
-	core "gochatws/core/interfaces"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
+
+	e "gochatws/core/errors"
+	c "gochatws/core/interfaces"
 )
 
 type UserRepository struct {
@@ -51,10 +52,20 @@ func (ur UserRepository) FindByUsername(username string) (*UserModel, error) {
 	return user, err
 }
 
-func (ur UserRepository) Validate(parser core.ParserFunc) (
-	*UserModel, error, *[]cerr.ValidationErrorResponse,
+func (ur UserRepository) ParseAndValidate(parser c.ParserFunc) (
+	*UserModel, error, *[]e.ValidationErrorResponse,
 ) {
 	return ur.getModel().ParseAndValidate(parser, ur.v)
+}
+
+func (ur UserRepository) Parse(parser c.ParserFunc) (*UserModel, error) {
+	parsedUser := ur.getModel()
+
+	if err := parser(parsedUser); err != nil {
+		return nil, err
+	}
+
+	return parsedUser, nil
 }
 
 func (ur UserRepository) ExistsByUsername(username string) bool {
