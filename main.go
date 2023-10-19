@@ -12,15 +12,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func setApp(db *sqlx.DB, st *session.Store) *fiber.App {
+func setApp(db *sqlx.DB) *fiber.App {
 
 	app := fiber.New()
+
+	st := session.New()
 
 	v := validator.New()
 
 	userRepository := u.NewUserRepo(db, v)
-	userController := u.NewUserController(userRepository, st)
 
+	userController := u.NewUserController(userRepository)
 	authController := a.NewBasicAuthController(userRepository, st)
 
 	// Unauthenticated endpoints
@@ -49,9 +51,7 @@ func main() {
 	}
 	defer db.Close()
 
-	sessionStore := session.New()
-
-	app := setApp(db, sessionStore)
+	app := setApp(db)
 
 	log.Fatalln(app.Listen(":8000"))
 }
