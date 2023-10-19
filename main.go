@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -16,14 +15,14 @@ func setApp(db *sqlx.DB) *fiber.App {
 
 	app := fiber.New()
 
-	st := session.New()
+	secret := []byte("secret")
 
 	v := validator.New()
 
 	userRepository := u.NewUserRepo(db, v)
 
 	userController := u.NewUserController(userRepository)
-	authController := a.NewBasicAuthController(userRepository, st)
+	authController := a.NewJwtAuthController(userRepository, &secret)
 
 	// Unauthenticated endpoints
 	app.
