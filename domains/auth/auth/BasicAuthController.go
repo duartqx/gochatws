@@ -3,7 +3,6 @@ package auth
 import (
 	"encoding/base64"
 	"fmt"
-	u "gochatws/domains/auth/users"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +10,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"golang.org/x/crypto/bcrypt"
+
+	e "gochatws/core/errors"
+	u "gochatws/domains/auth/users"
 )
 
 type BasicAuthController struct {
@@ -65,12 +67,16 @@ func (lm BasicAuthController) Login(c *fiber.Ctx) error {
 
 	user, err := lm.userRepository.FindByUsername(username)
 	if err != nil {
-		return c.SendStatus(http.StatusUnauthorized)
+		return c.
+			Status(http.StatusUnauthorized).
+			JSON(e.WrongUsernameOrPassword)
 	}
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password), []byte(password),
 	); err != nil {
-		return c.SendStatus(http.StatusUnauthorized)
+		return c.
+			Status(http.StatusUnauthorized).
+			JSON(e.WrongUsernameOrPassword)
 	}
 
 	se, err := lm.sessionStore.Get(c)
