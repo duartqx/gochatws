@@ -1,4 +1,4 @@
-module gochatws
+module github.com/duartqx/gochatws
 
 go 1.21.3
 
