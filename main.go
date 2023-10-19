@@ -1,8 +1,8 @@
 package main
 
 import (
-	a "gochatws/domains/auth/auth"
-	u "gochatws/domains/auth/users"
+	a "github.com/duartqx/gochatws/domains/auth/auth"
+	u "github.com/duartqx/gochatws/domains/auth/users"
 	"log"
 
 	"github.com/go-playground/validator/v10"
@@ -23,15 +23,13 @@ func setApp(db *sqlx.DB) *fiber.App {
 	userController := u.NewUserController(userRepository)
 	authController := a.NewJwtAuthController(userRepository, &secret)
 
-	// Unauthenticated endpoints
+	// Auth endpoints
 	app.
+		Post("/register", userController.Create).
 		Post("/login", authController.Login).
-		Post("/register", userController.Create)
+		Delete("/logout", authController.AuthMiddleware, authController.Logout)
 
-	// Authenticated endpoints
-	app.
-		Post("/logout", authController.AuthMiddleware, authController.Logout)
-
+	// Users endpoints
 	app.Group("/users").
 		// Middleware
 		Use(authController.AuthMiddleware).
