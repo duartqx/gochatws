@@ -6,14 +6,17 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserController struct {
 	userRepository *UserRepository
+	sessionStore   *session.Store
 }
 
-func NewUserController(userRepository *UserRepository) *UserController {
-	return &UserController{userRepository: userRepository}
+func NewUserController(ur *UserRepository, st *session.Store) *UserController {
+	return &UserController{userRepository: ur, sessionStore: st}
 }
 
 func (uc UserController) All(c *fiber.Ctx) error {
@@ -31,7 +34,7 @@ func (uc UserController) All(c *fiber.Ctx) error {
 *
  */
 func (uc UserController) Get(c *fiber.Ctx) error {
-	dbUser, err := uc.userRepository.FindUserByIdParam(c.Params("id"))
+	dbUser, err := uc.userRepository.FindByIdParam(c.Params("id"))
 	if err != nil {
 		return c.Status(http.StatusNotFound).JSON(cerr.NotFoundError)
 	}
@@ -59,6 +62,12 @@ func (uc UserController) Create(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(cerr.InvalidUsernameError)
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(bodyUser.Password), 10)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(cerr.PasswordTooLongError)
+	}
+	bodyUser.Password = string(hashedPassword)
+
 	uc.userRepository.Create(bodyUser)
 
 	return c.Status(http.StatusCreated).JSON(&bodyUser)
@@ -73,7 +82,7 @@ func (uc UserController) Create(c *fiber.Ctx) error {
 func (uc UserController) Update(c *fiber.Ctx) error {
 	// TODO: Remove id Param and get the id of the authenticated user
 
-	dbUser, err := uc.userRepository.FindUserByIdParam(c.Params("id"))
+	dbUser, err := uc.userRepository.FindByIdParam(c.Params("id"))
 	if err != nil {
 		jsonErr := cerr.CustomMessageError(err.Error())
 		return c.Status(http.StatusBadRequest).JSON(jsonErr)
