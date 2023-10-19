@@ -1,37 +1,44 @@
 package main
 
 import (
+	a "gochatws/domains/auth/auth"
 	u "gochatws/domains/auth/users"
 	"log"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func setApp(db *sqlx.DB) *fiber.App {
+func setApp(db *sqlx.DB, st *session.Store) *fiber.App {
+
 	app := fiber.New()
+
 	v := validator.New()
 
-	authRouter := app.Group("/users")
-	setAuthRoutes(&authRouter, db, v)
-
-	return app
-}
-
-func setAuthRoutes(r *fiber.Router, db *sqlx.DB, v *validator.Validate) {
-
 	userRepository := u.NewUserRepo(db, v)
-	userController := u.NewUserController(userRepository)
+	userController := u.NewUserController(userRepository, st)
 
-	(*r).
+	authController := a.NewBasicAuthController(userRepository, st)
+
+	// Unauthenticated endpoints
+	app.
+		Post("/login", authController.Login).
+		Post("/register", userController.Create)
+
+	// Authenticated endpoints
+	app.Group("/users").
+		// Middleware
+		Use(authController.AuthenticationMiddleware).
+		// Endpoints
 		Get("/", userController.All).
-		Post("/", userController.Create).
 		Get("/:id<int>", userController.Get).
 		Put("/:id<int>", userController.Update).
 		Delete("/:id<int>", userController.Delete)
 
+	return app
 }
 
 func main() {
@@ -42,7 +49,9 @@ func main() {
 	}
 	defer db.Close()
 
-	app := setApp(db)
+	sessionStore := session.New()
+
+	app := setApp(db, sessionStore)
 
 	log.Fatalln(app.Listen(":8000"))
 }
