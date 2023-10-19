@@ -4,20 +4,21 @@ import "github.com/go-playground/validator/v10"
 
 var (
 	// map[string]string Errors
-	NotFoundError        = map[string]string{"error": "Not Found"}
 	InternalError        = map[string]string{"error": "Internal"}
 	InvalidUsernameError = map[string]string{"error": "Invalid username"}
+	NotFoundError        = map[string]string{"error": "Not Found"}
+	PasswordTooLongError = map[string]string{"error": "Unfortunately your password is too long"}
 	SerializerError      = map[string]string{"error": "Error deserializing JSON"}
 
 	// func Errors
+	CustomMessageError = func(err interface{}) map[string]interface{} {
+		return map[string]interface{}{"error": err}
+	}
 	ValidationError = func(errs *[]ValidationErrorResponse) map[string]interface{} {
 		return map[string]interface{}{
 			"error":            "Validation Error",
 			"validationErrors": errs,
 		}
-	}
-	CustomMessageError = func(err interface{}) map[string]interface{} {
-		return map[string]interface{}{"error": err}
 	}
 )
 
