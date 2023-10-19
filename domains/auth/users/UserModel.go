@@ -1,14 +1,20 @@
 package auth
 
 import (
-	cerr "gochatws/core/errors"
-	core "gochatws/core/interfaces"
+	e "github.com/duartqx/gochatws/core/errors"
+	c "github.com/duartqx/gochatws/core/interfaces"
 
 	"github.com/go-playground/validator/v10"
 )
 
+type UserClean struct {
+	Id       int    `db:"id" json:"id"`
+	Username string `db:"username" json:"username"`
+	Name     string `db:"name" json:"name"`
+}
+
 type UserModel struct {
-	Id       int    `db:"id" json:"user_id"`
+	Id       int    `db:"id" json:"id"`
 	Username string `db:"username" json:"username" validate:"email,required"`
 	Name     string `db:"name" json:"name" validate:"required,min=3,max=50"`
 	Password string `db:"password" json:"password"`
@@ -24,8 +30,8 @@ func (u *UserModel) UpdateFromAnother(other *UserModel) {
 	}
 }
 
-func (u UserModel) ParseAndValidate(parser core.ParserFunc, v *validator.Validate) (
-	*UserModel, error, *[]cerr.ValidationErrorResponse,
+func (u UserModel) ParseAndValidate(parser c.ParserFunc, v *validator.Validate) (
+	*UserModel, error, *[]e.ValidationErrorResponse,
 ) {
 	parsedUser := &UserModel{}
 
@@ -34,8 +40,12 @@ func (u UserModel) ParseAndValidate(parser core.ParserFunc, v *validator.Validat
 	}
 
 	if err := v.Struct(parsedUser); err != nil {
-		return nil, err, cerr.BuildErrorResponse(err)
+		return nil, err, e.BuildErrorResponse(err)
 	}
 
 	return parsedUser, nil, nil
+}
+
+func (u UserModel) Clean() *UserClean {
+	return &UserClean{Id: u.Id, Name: u.Name, Username: u.Username}
 }
