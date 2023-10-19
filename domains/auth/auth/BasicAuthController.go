@@ -11,8 +11,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"golang.org/x/crypto/bcrypt"
 
-	e "gochatws/core/errors"
-	u "gochatws/domains/auth/users"
+	e "github.com/duartqx/gochatws/core/errors"
+	u "github.com/duartqx/gochatws/domains/auth/users"
 )
 
 type BasicAuthController struct {
