@@ -90,7 +90,7 @@ func (lm BasicAuthController) Login(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(map[string]string{"message": "Logged in"})
 }
 
-func (lm BasicAuthController) AuthenticationMiddleware(c *fiber.Ctx) error {
+func (lm BasicAuthController) AuthMiddleware(c *fiber.Ctx) error {
 	se, err := lm.sessionStore.Get(c)
 	if err != nil {
 		return c.SendStatus(http.StatusUnauthorized)
