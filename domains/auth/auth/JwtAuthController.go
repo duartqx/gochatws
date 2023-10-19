@@ -10,9 +10,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	e "gochatws/core/errors"
-	s "gochatws/domains/auth/sessions"
-	u "gochatws/domains/auth/users"
+	e "github.com/duartqx/gochatws/core/errors"
+	s "github.com/duartqx/gochatws/domains/auth/sessions"
+	u "github.com/duartqx/gochatws/domains/auth/users"
 )
 
 type sessionStore map[string]*s.SessionModel
@@ -167,8 +167,7 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 			"createdAt": createdAt,
 			"expiresAt": expiresAt,
 			"status":    "Logged In",
-		},
-		)
+		})
 }
 
 func (jc JwtAuthController) Logout(c *fiber.Ctx) error {
