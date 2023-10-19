@@ -1,12 +1,12 @@
 package auth
 
 import (
-	cerr "gochatws/core/errors"
-
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
+
+	e "gochatws/core/errors"
 )
 
 type UserController struct {
@@ -22,7 +22,7 @@ func (uc UserController) All(c *fiber.Ctx) error {
 	if err != nil {
 		return c.
 			Status(http.StatusInternalServerError).
-			JSON(cerr.InternalError)
+			JSON(e.InternalError)
 	}
 	return c.JSON(users)
 }
@@ -36,7 +36,7 @@ func (uc UserController) All(c *fiber.Ctx) error {
 func (uc UserController) Get(c *fiber.Ctx) error {
 	dbUser, err := uc.userRepository.FindByIdParam(c.Params("id"))
 	if err != nil {
-		return c.Status(http.StatusNotFound).JSON(cerr.NotFoundError)
+		return c.Status(http.StatusNotFound).JSON(e.NotFoundError)
 	}
 	return c.Status(http.StatusOK).JSON(dbUser)
 }
@@ -49,24 +49,24 @@ func (uc UserController) Get(c *fiber.Ctx) error {
  */
 func (uc UserController) Create(c *fiber.Ctx) error {
 
-	bodyUser, err, validationErrs := uc.userRepository.Validate(c.BodyParser)
+	bodyUser, err, validationErrs := uc.userRepository.ParseAndValidate(c.BodyParser)
 
 	if validationErrs != nil {
 		return c.
 			Status(http.StatusBadRequest).
-			JSON(cerr.ValidationError(validationErrs))
+			JSON(e.ValidationError(validationErrs))
 	}
 
 	if err != nil {
 		return c.
 			Status(http.StatusInternalServerError).
-			JSON(cerr.SerializerError)
+			JSON(e.SerializerError)
 	}
 
 	if uc.userRepository.ExistsByUsername(bodyUser.Username) == true {
 		return c.
 			Status(http.StatusBadRequest).
-			JSON(cerr.InvalidUsernameError)
+			JSON(e.InvalidUsernameError)
 	}
 
 	hashedPassword, err :=
@@ -75,7 +75,7 @@ func (uc UserController) Create(c *fiber.Ctx) error {
 	if err != nil {
 		return c.
 			Status(http.StatusBadRequest).
-			JSON(cerr.PasswordTooLongError)
+			JSON(e.PasswordTooLongError)
 	}
 	bodyUser.Password = string(hashedPassword)
 
@@ -97,19 +97,19 @@ func (uc UserController) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return c.
 			Status(http.StatusBadRequest).
-			JSON(cerr.CustomMessageError(err.Error()))
+			JSON(e.CustomMessageError(err.Error()))
 	}
 
-	bodyUser, err, validationErrs := uc.userRepository.Validate(c.BodyParser)
+	bodyUser, err, validationErrs := uc.userRepository.ParseAndValidate(c.BodyParser)
 
 	if validationErrs != nil {
 		return c.
 			Status(http.StatusBadRequest).
-			JSON(cerr.ValidationError(validationErrs))
+			JSON(e.ValidationError(validationErrs))
 	}
 
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(cerr.SerializerError)
+		return c.Status(http.StatusBadRequest).JSON(e.SerializerError)
 	}
 
 	dbUser.UpdateFromAnother(bodyUser)
