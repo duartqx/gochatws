@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -10,22 +11,33 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	e "gochatws/core/errors"
+	s "gochatws/domains/auth/sessions"
 	u "gochatws/domains/auth/users"
 )
+
+type sessionStore map[string]*s.SessionModel
+
+type ClaimsUser struct {
+	Id       int
+	Username string
+	Name     string
+}
 
 type JwtAuthController struct {
 	userRepository *u.UserRepository
 	secret         *[]byte
+	sessionStore   *sessionStore
 }
 
 func NewJwtAuthController(ur *u.UserRepository, se *[]byte) *JwtAuthController {
 	return &JwtAuthController{
 		userRepository: ur,
 		secret:         se,
+		sessionStore:   &sessionStore{},
 	}
 }
 
-func (jc JwtAuthController) getToken(c *fiber.Ctx) string {
+func (jc JwtAuthController) getTokenFromCtx(c *fiber.Ctx) string {
 	var (
 		token string
 		found bool
@@ -41,12 +53,42 @@ func (jc JwtAuthController) getToken(c *fiber.Ctx) string {
 	return c.Cookies("jwt")
 }
 
+func (jc JwtAuthController) generateToken(user *ClaimsUser, expiresAt time.Time) (
+	string, *fiber.Cookie, error,
+) {
+	claims := jwt.MapClaims{
+		"user": fiber.Map{
+			"id":       user.Id,
+			"username": user.Username,
+			"name":     user.Name,
+		},
+		"exp": expiresAt.Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenStr, err := token.SignedString(*jc.secret)
+	if err != nil {
+		return "", &fiber.Cookie{}, fmt.Errorf("Bad secret key")
+	}
+
+	cookie := fiber.Cookie{
+		Name:     "jwt",
+		Value:    tokenStr,
+		Expires:  expiresAt,
+		HTTPOnly: true,
+		Secure:   true,
+	}
+
+	return tokenStr, &cookie, nil
+}
+
 func (jc JwtAuthController) keyFunc(t *jwt.Token) (interface{}, error) {
 	return *jc.secret, nil
 }
 
-func (jc JwtAuthController) AuthenticationMiddleware(c *fiber.Ctx) error {
-	unparsedToken := jc.getToken(c)
+func (jc JwtAuthController) AuthMiddleware(c *fiber.Ctx) error {
+	unparsedToken := jc.getTokenFromCtx(c)
 
 	if unparsedToken == "" {
 		return c.
@@ -54,8 +96,19 @@ func (jc JwtAuthController) AuthenticationMiddleware(c *fiber.Ctx) error {
 			JSON(e.InvalidTokenError)
 	}
 
+	_, sessionOk := (*jc.sessionStore)[unparsedToken]
+
+	if !sessionOk {
+		return c.
+			Status(http.StatusInternalServerError).
+			JSON(e.InvalidTokenError)
+	}
+
 	parsedToken, err := jwt.Parse(unparsedToken, jc.keyFunc)
 	if err != nil || !parsedToken.Valid {
+
+		delete(*jc.sessionStore, unparsedToken)
+
 		return c.
 			Status(http.StatusUnauthorized).
 			JSON(e.InvalidTokenError)
@@ -65,8 +118,8 @@ func (jc JwtAuthController) AuthenticationMiddleware(c *fiber.Ctx) error {
 }
 
 func (jc JwtAuthController) Login(c *fiber.Ctx) error {
-	bodyUser, err := jc.userRepository.Parse(c.BodyParser)
 
+	bodyUser, err := jc.userRepository.Parse(c.BodyParser)
 	if err != nil {
 		return c.
 			Status(http.StatusInternalServerError).
@@ -88,30 +141,53 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 			JSON(e.WrongUsernameOrPassword)
 	}
 
-	claims := jwt.MapClaims{
-		"user": fiber.Map{
-			"id":       dbUser.Id,
-			"username": dbUser.Username,
-			"name":     dbUser.Name,
-		},
-		"exp": time.Now().Add(time.Hour * 12).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	createdAt := time.Now()
+	expiresAt := createdAt.Add(time.Hour * 12)
 
-	tokenStr, err := token.SignedString(*jc.secret)
+	tokenStr, cookie, err := jc.generateToken(
+		&ClaimsUser{Id: dbUser.Id, Username: dbUser.Username, Name: dbUser.Name},
+		expiresAt,
+	)
 	if err != nil {
 		return c.
 			Status(http.StatusInternalServerError).
 			JSON(e.InternalError)
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "jwt",
-		Value:    tokenStr,
-		HTTPOnly: true,
-	})
+	(*jc.sessionStore)[tokenStr] = &s.SessionModel{
+		Token: tokenStr, CreationAt: createdAt, UserId: dbUser.Id,
+	}
+
+	c.Cookie(cookie)
 
 	return c.
 		Status(http.StatusOK).
-		JSON(map[string]string{"token": tokenStr})
+		JSON(fiber.Map{
+			"token":     tokenStr,
+			"createdAt": createdAt,
+			"expiresAt": expiresAt,
+			"status":    "Logged In",
+		},
+		)
+}
+
+func (jc JwtAuthController) Logout(c *fiber.Ctx) error {
+	expiresAt := time.Now().Add(time.Hour * -3)
+
+	_, cookie, err := jc.generateToken(&ClaimsUser{}, expiresAt)
+	if err != nil {
+		return c.
+			Status(http.StatusInternalServerError).
+			JSON(e.InternalError)
+	}
+
+	c.Cookie(cookie)
+
+	invalidToken := jc.getTokenFromCtx(c)
+
+	delete(*jc.sessionStore, invalidToken)
+
+	return c.
+		Status(http.StatusOK).
+		JSON(fiber.Map{"status": "Logged out"})
 }
