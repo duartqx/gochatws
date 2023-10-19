@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 
-	e "gochatws/core/errors"
+	e "github.com/duartqx/gochatws/core/errors"
 )
 
 type UserController struct {
@@ -38,7 +38,7 @@ func (uc UserController) Get(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusNotFound).JSON(e.NotFoundError)
 	}
-	return c.Status(http.StatusOK).JSON(dbUser)
+	return c.Status(http.StatusOK).JSON(dbUser.Clean())
 }
 
 /*
@@ -81,7 +81,7 @@ func (uc UserController) Create(c *fiber.Ctx) error {
 
 	uc.userRepository.Create(bodyUser)
 
-	return c.Status(http.StatusCreated).JSON(&bodyUser)
+	return c.Status(http.StatusCreated).JSON(bodyUser.Clean())
 }
 
 /*
@@ -116,7 +116,7 @@ func (uc UserController) Update(c *fiber.Ctx) error {
 
 	uc.userRepository.Update(dbUser)
 
-	return c.Status(http.StatusOK).JSON(dbUser)
+	return c.Status(http.StatusOK).JSON(dbUser.Clean())
 }
 
 func (uc UserController) Delete(c *fiber.Ctx) error {
