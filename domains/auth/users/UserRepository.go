@@ -6,8 +6,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
 
-	e "gochatws/core/errors"
-	c "gochatws/core/interfaces"
+	e "github.com/duartqx/gochatws/core/errors"
+	c "github.com/duartqx/gochatws/core/interfaces"
 )
 
 type UserRepository struct {
@@ -77,9 +77,9 @@ func (ur UserRepository) ExistsByUsername(username string) bool {
 	return false
 }
 
-func (ur UserRepository) All() (*[]UserModel, error) {
-	users := []UserModel{}
-	err := ur.db.Select(&users, "SELECT * FROM User")
+func (ur UserRepository) All() (*[]UserClean, error) {
+	users := []UserClean{}
+	err := ur.db.Select(&users, "SELECT id, name, username FROM User")
 	if err != nil {
 		return nil, err
 	}
