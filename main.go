@@ -16,10 +16,9 @@ func setApp(db *sqlx.DB) *fiber.App {
 	app := fiber.New()
 
 	secret := []byte("secret")
-
 	v := validator.New()
 
-	userRepository := u.NewUserRepo(db, v)
+	userRepository := u.NewUserRepository(db, v)
 
 	userController := u.NewUserController(userRepository)
 	authController := a.NewJwtAuthController(userRepository, &secret)
@@ -30,9 +29,12 @@ func setApp(db *sqlx.DB) *fiber.App {
 		Post("/register", userController.Create)
 
 	// Authenticated endpoints
+	app.
+		Post("/logout", authController.AuthMiddleware, authController.Logout)
+
 	app.Group("/users").
 		// Middleware
-		Use(authController.AuthenticationMiddleware).
+		Use(authController.AuthMiddleware).
 		// Endpoints
 		Get("/", userController.All).
 		Get("/:id<int>", userController.Get).
