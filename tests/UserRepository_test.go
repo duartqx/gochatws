@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"log"
 	"testing"
 
 	i "github.com/duartqx/gochatws/core/interfaces"
@@ -15,6 +14,4 @@ func TestUserRepositoryImplementsRepository(t *testing.T) {
 	if _, ok := userRepository.(i.Repository); !ok {
 		t.Errorf("UserRepository does not Implements Repository!")
 	}
-	log.Println("UserRepository does Implements Repository!")
-
 }
