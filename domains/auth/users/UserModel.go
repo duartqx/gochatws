@@ -57,18 +57,20 @@ func (u UserModel) Clean() i.User {
 	return &UserClean{Id: u.Id, Name: u.Name, Username: u.Username}
 }
 
+// UserClean is returned from UserModel.Clean method to make sure the Password
+// field is not leaked even if it's hashed. fiber.Ctx{}.BodyParser was not able
+// to parse the password if I set the tag to json:"-" when creating users, so I
+// decided for this approach of returning a new struct via a method
 type UserClean struct {
 	Id       int    `db:"id" json:"id"`
 	Username string `db:"username" json:"username"`
 	Name     string `db:"name" json:"name"`
 }
 
-func (u *UserClean) UpdateFromAnother(other i.User) {
-	// Update
-}
+func (u *UserClean) UpdateFromAnother(other i.User) {}
 
-func (u *UserClean) Clean() i.User {
-	return u
+func (u UserClean) Clean() i.User {
+	return &u
 }
 
 func (u UserClean) GetId() int {
