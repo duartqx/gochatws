@@ -1,4 +1,4 @@
-package auth
+package users
 
 import (
 	e "github.com/duartqx/gochatws/core/errors"
