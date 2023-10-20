@@ -3,15 +3,10 @@ package auth
 import (
 	e "github.com/duartqx/gochatws/core/errors"
 	c "github.com/duartqx/gochatws/core/interfaces"
+	i "github.com/duartqx/gochatws/core/interfaces"
 
 	"github.com/go-playground/validator/v10"
 )
-
-type UserClean struct {
-	Id       int    `db:"id" json:"id"`
-	Username string `db:"username" json:"username"`
-	Name     string `db:"name" json:"name"`
-}
 
 type UserModel struct {
 	Id       int    `db:"id" json:"id"`
@@ -20,13 +15,25 @@ type UserModel struct {
 	Password string `db:"password" json:"password"`
 }
 
-func (u *UserModel) UpdateFromAnother(other *UserModel) {
-	if other.Name != "" {
-		u.Name = other.Name
+func (u UserModel) GetId() int {
+	return u.Id
+}
+
+func (u UserModel) GetName() string {
+	return u.Name
+}
+
+func (u UserModel) GetUsername() string {
+	return u.Username
+}
+
+func (u *UserModel) UpdateFromAnother(other i.User) {
+	if other.GetName() != "" {
+		u.Name = other.GetName()
 	}
 
-	if other.Username != "" {
-		u.Username = other.Username
+	if other.GetUsername() != "" {
+		u.Username = other.GetUsername()
 	}
 }
 
@@ -46,6 +53,32 @@ func (u UserModel) ParseAndValidate(parser c.ParserFunc, v *validator.Validate) 
 	return parsedUser, nil, nil
 }
 
-func (u UserModel) Clean() *UserClean {
+func (u UserModel) Clean() i.User {
 	return &UserClean{Id: u.Id, Name: u.Name, Username: u.Username}
+}
+
+type UserClean struct {
+	Id       int    `db:"id" json:"id"`
+	Username string `db:"username" json:"username"`
+	Name     string `db:"name" json:"name"`
+}
+
+func (u *UserClean) UpdateFromAnother(other i.User) {
+	// Update
+}
+
+func (u *UserClean) Clean() i.User {
+	return u
+}
+
+func (u UserClean) GetId() int {
+	return u.Id
+}
+
+func (u UserClean) GetName() string {
+	return u.Name
+}
+
+func (u UserClean) GetUsername() string {
+	return u.Username
 }
