@@ -1,4 +1,4 @@
-package core
+package errors
 
 import "github.com/go-playground/validator/v10"
 
