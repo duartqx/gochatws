@@ -7,7 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	e "github.com/duartqx/gochatws/core/errors"
-	c "github.com/duartqx/gochatws/core/interfaces"
+	i "github.com/duartqx/gochatws/core/interfaces"
 )
 
 type UserRepository struct {
@@ -23,13 +23,13 @@ func (ur UserRepository) GetModel() *UserModel {
 	return &UserModel{}
 }
 
-func (ur UserRepository) FindById(id int) (*UserModel, error) {
+func (ur UserRepository) FindById(id int) (i.User, error) {
 	user := ur.GetModel()
 	err := ur.db.Get(user, "SELECT * FROM User WHERE ID = $1 LIMIT 1", id)
 	return user, err
 }
 
-func (ur UserRepository) FindByIdParam(id string) (*UserModel, error) {
+func (ur UserRepository) FindByIdParam(id string) (i.User, error) {
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return nil, err
@@ -48,13 +48,13 @@ func (ur UserRepository) FindByUsername(username string) (*UserModel, error) {
 	return user, err
 }
 
-func (ur UserRepository) ParseAndValidate(parser c.ParserFunc) (
+func (ur UserRepository) ParseAndValidate(parser i.ParserFunc) (
 	*UserModel, error, *[]e.ValidationErrorResponse,
 ) {
 	return ur.GetModel().ParseAndValidate(parser, ur.v)
 }
 
-func (ur UserRepository) Parse(parser c.ParserFunc) (*UserModel, error) {
+func (ur UserRepository) Parse(parser i.ParserFunc) (*UserModel, error) {
 	parsedUser := ur.GetModel()
 
 	if err := parser(parsedUser); err != nil {
@@ -86,12 +86,12 @@ func (ur UserRepository) All() (*[]UserClean, error) {
 	return &users, nil
 }
 
-func (ur UserRepository) Update(u *UserModel) error {
+func (ur UserRepository) Update(u i.User) error {
 	_, err := ur.db.Exec(
 		"UPDATE User SET name = $1, username = $2 WHERE id = $3",
-		u.Name,
-		u.Username,
-		u.Id,
+		u.GetName(),
+		u.GetUsername(),
+		u.GetId(),
 	)
 	return err
 }
