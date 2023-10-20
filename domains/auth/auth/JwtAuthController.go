@@ -23,6 +23,13 @@ type ClaimsUser struct {
 	Name     string
 }
 
+type LoginResponse struct {
+	Token     string    `json:"token"`
+	CreatedAt time.Time `json:"createdAt"`
+	ExpiresAt time.Time `json:"expiresAt"`
+	Status    string    `json:"status"`
+}
+
 type JwtAuthController struct {
 	userRepository *u.UserRepository
 	secret         *[]byte
@@ -166,29 +173,21 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 
 	return c.
 		Status(http.StatusOK).
-		JSON(fiber.Map{
-			"token":     tokenStr,
-			"createdAt": createdAt,
-			"expiresAt": expiresAt,
-			"status":    "Logged In",
-		})
+		JSON(
+			LoginResponse{
+				Token:     tokenStr,
+				CreatedAt: createdAt,
+				ExpiresAt: expiresAt,
+				Status:    "Logged In",
+			},
+		)
 }
 
 func (jc JwtAuthController) Logout(c *fiber.Ctx) error {
-	expiresAt := time.Now().Add(time.Hour * -3)
 
-	_, cookie, err := jc.generateToken(&ClaimsUser{}, expiresAt)
-	if err != nil {
-		return c.
-			Status(http.StatusInternalServerError).
-			JSON(e.InternalError)
-	}
+	sessionToken := jc.getTokenFromCtx(c)
 
-	c.Cookie(cookie)
-
-	invalidToken := jc.getTokenFromCtx(c)
-
-	delete(*jc.sessionStore, invalidToken)
+	delete(*jc.sessionStore, sessionToken)
 
 	return c.
 		Status(http.StatusOK).
