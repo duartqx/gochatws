@@ -42,7 +42,9 @@ func (jc JwtAuthController) getTokenFromCtx(c *fiber.Ctx) string {
 		token string
 		found bool
 	)
+
 	token = c.Get("Authorization")
+
 	if token != "" {
 		token, found = strings.CutPrefix(token, "Bearer ")
 		if !found {
@@ -50,12 +52,14 @@ func (jc JwtAuthController) getTokenFromCtx(c *fiber.Ctx) string {
 		}
 		return token
 	}
+
 	return c.Cookies("jwt")
 }
 
 func (jc JwtAuthController) generateToken(user *ClaimsUser, expiresAt time.Time) (
 	string, *fiber.Cookie, error,
 ) {
+
 	claims := jwt.MapClaims{
 		"user": fiber.Map{
 			"id":       user.Id,
@@ -100,7 +104,7 @@ func (jc JwtAuthController) AuthMiddleware(c *fiber.Ctx) error {
 
 	if !sessionOk {
 		return c.
-			Status(http.StatusInternalServerError).
+			Status(http.StatusUnauthorized).
 			JSON(e.InvalidTokenError)
 	}
 
