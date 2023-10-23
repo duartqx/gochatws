@@ -69,14 +69,14 @@ func (lm BasicAuthController) Login(c *fiber.Ctx) error {
 	if err != nil {
 		return c.
 			Status(http.StatusUnauthorized).
-			JSON(e.WrongUsernameOrPassword)
+			JSON(e.WrongUsernameOrPasswordError)
 	}
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(user.Password), []byte(password),
+		[]byte(user.GetPassword()), []byte(password),
 	); err != nil {
 		return c.
 			Status(http.StatusUnauthorized).
-			JSON(e.WrongUsernameOrPassword)
+			JSON(e.WrongUsernameOrPasswordError)
 	}
 
 	se, err := lm.sessionStore.Get(c)
