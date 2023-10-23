@@ -60,9 +60,9 @@ func TestUserModel(t *testing.T) {
 
 func TestUserRepositoryImplementsRepository(t *testing.T) {
 
-	var userRepository i.Repository = UserRepository{}
+	var userRepository i.UserRepository = UserRepository{}
 
-	if _, ok := userRepository.(i.Repository); !ok {
+	if _, ok := userRepository.(i.UserRepository); !ok {
 		t.Errorf("FAILED: UserRepository does not Implements Repository!\n")
 	}
 	t.Logf("PASSED: UserRepository implements Repository interface.\n")
