@@ -1,11 +1,14 @@
 package main
 
 import (
-	a "github.com/duartqx/gochatws/domains/auth/auth"
-	u "github.com/duartqx/gochatws/domains/auth/users"
 	"log"
 
+	a "github.com/duartqx/gochatws/domains/auth/auth"
+	u "github.com/duartqx/gochatws/domains/auth/users"
+	c "github.com/duartqx/gochatws/domains/chat"
+
 	"github.com/go-playground/validator/v10"
+	// "github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -19,9 +22,11 @@ func setApp(db *sqlx.DB) *fiber.App {
 	v := validator.New()
 
 	userRepository := u.NewUserRepository(db, v)
+	chatRoomRepository := c.NewChatRoomRepository(db, userRepository)
 
 	userController := u.NewUserController(userRepository)
 	authController := a.NewJwtAuthController(userRepository, &secret)
+	chatRoomController := c.NewChatRoomController(chatRoomRepository)
 
 	// Auth endpoints
 	app.
@@ -38,6 +43,11 @@ func setApp(db *sqlx.DB) *fiber.App {
 		Get("/:id<int>", userController.Get).
 		Put("/:id<int>", userController.Update).
 		Delete("/:id<int>", userController.Delete)
+
+	app.Group("/chat").
+		Get("/", chatRoomController.All).
+		Post("/", chatRoomController.Create).
+		Get("/:id<int>", chatRoomController.One)
 
 	return app
 }
