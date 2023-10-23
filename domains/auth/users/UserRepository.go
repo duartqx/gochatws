@@ -34,12 +34,7 @@ func (ur UserRepository) FindByIdParam(id string) (i.User, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	foundUser, err := ur.FindById(idInt)
-	if err != nil {
-		return nil, err
-	}
-	return foundUser, nil
+	return ur.FindById(idInt)
 }
 
 func (ur UserRepository) FindByUsername(username string) (*UserModel, error) {
