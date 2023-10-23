@@ -35,7 +35,7 @@ func (crr ChatRoomRepository) FindById(id int) (i.ChatRoom, error) {
 
 	chatRoom := crr.GetModel()
 
-	row := crr.db.QueryRow(baseJoinQuery+"WHERE c.id = $1", id)
+	row := crr.db.QueryRow(baseJoinQuery+"WHERE c.id = $1 LIMIT 1", id)
 	if err := row.Scan(
 		&chatRoom.Id,
 		&chatRoom.CreatorId,
