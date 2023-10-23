@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	// "github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -28,21 +29,34 @@ func setApp(db *sqlx.DB) *fiber.App {
 	authController := a.NewJwtAuthController(userRepository, &secret)
 	chatRoomController := c.NewChatRoomController(chatRoomRepository)
 
+	// Logger middleware
+	app.Use(
+		logger.New(
+			logger.Config{TimeFormat: "2006-01-02 15:04:05"},
+		),
+	)
+
 	// Auth endpoints
 	app.
-		Post("/register", userController.Create).
-		Post("/login", authController.Login).
+		Post(
+			"/register",
+			authController.AuthNotLoggedMiddleware,
+			userController.Create).
+		Post(
+			"/login",
+			authController.AuthNotLoggedMiddleware,
+			authController.Login).
 		Delete("/logout", authController.AuthMiddleware, authController.Logout)
 
 	// Users endpoints
-	app.Group("/users").
+	app.Group("/user").
 		// Middleware
 		Use(authController.AuthMiddleware).
 		// Endpoints
-		Get("/", userController.All).
-		Get("/:id<int>", userController.Get).
-		Put("/:id<int>", userController.Update).
-		Delete("/:id<int>", userController.Delete)
+		Get("/list", userController.All).
+		Get("/", userController.Get).
+		Put("/", userController.Update).
+		Delete("/", userController.Delete)
 
 	app.Group("/chat").
 		Get("/", chatRoomController.All).
