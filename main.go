@@ -4,6 +4,7 @@ import (
 	"log"
 
 	a "github.com/duartqx/gochatws/domains/auth/auth"
+	s "github.com/duartqx/gochatws/domains/auth/sessions"
 	u "github.com/duartqx/gochatws/domains/auth/users"
 	c "github.com/duartqx/gochatws/domains/chat"
 
@@ -21,12 +22,15 @@ func setApp(db *sqlx.DB) *fiber.App {
 
 	secret := []byte("secret")
 	v := validator.New()
+	sessionStore := s.NewSessionStore()
 
 	userRepository := u.NewUserRepository(db, v)
 	chatRoomRepository := c.NewChatRoomRepository(db, userRepository)
 
 	userController := u.NewUserController(userRepository)
-	authController := a.NewJwtAuthController(userRepository, &secret)
+	authController := a.NewJwtAuthController(
+		userRepository, &secret, sessionStore,
+	)
 	chatRoomController := c.NewChatRoomController(chatRoomRepository)
 
 	// Logger middleware
