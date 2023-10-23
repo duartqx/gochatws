@@ -23,6 +23,10 @@ func (ur UserRepository) GetModel() *UserModel {
 	return &UserModel{}
 }
 
+func (ur UserRepository) GetCleanModel() *UserClean {
+	return &UserClean{}
+}
+
 func (ur UserRepository) FindById(id int) (i.User, error) {
 	user := ur.GetModel()
 	err := ur.db.Get(user, "SELECT * FROM User WHERE ID = $1 LIMIT 1", id)
@@ -37,7 +41,7 @@ func (ur UserRepository) FindByIdParam(id string) (i.User, error) {
 	return ur.FindById(idInt)
 }
 
-func (ur UserRepository) FindByUsername(username string) (*UserModel, error) {
+func (ur UserRepository) FindByUsername(username string) (i.User, error) {
 	user := ur.GetModel()
 	err := ur.db.Get(user, "SELECT * FROM User WHERE username = $1", username)
 	return user, err
@@ -72,11 +76,22 @@ func (ur UserRepository) ExistsByUsername(username string) bool {
 	return false
 }
 
-func (ur UserRepository) All() (*[]UserClean, error) {
-	users := []UserClean{}
-	err := ur.db.Select(&users, "SELECT id, name, username FROM User")
+func (ur UserRepository) All() (*[]i.User, error) {
+	users := []i.User{}
+	rows, err := ur.db.Query("SELECT id, name, username FROM User")
 	if err != nil {
 		return nil, err
+	}
+	for rows.Next() {
+		user := ur.GetCleanModel()
+
+		if err := rows.Scan(&user.Id, &user.Name, &user.Username); err != nil {
+			return nil, err
+		}
+
+		var iUser i.User = user
+
+		users = append(users, iUser)
 	}
 	return &users, nil
 }
@@ -91,15 +106,35 @@ func (ur UserRepository) Update(u i.User) error {
 	return err
 }
 
-func (ur UserRepository) Create(u *UserModel) error {
+func (ur UserRepository) Create(u i.User) error {
 	_, err := ur.db.Exec(
 		"INSERT INTO User (name, username, password) VALUES ($1, $2, $3)",
-		u.Name,
-		u.Username,
-		u.Password,
+		u.GetName(),
+		u.GetUsername(),
+		u.GetPassword(),
 	)
 	if err != nil {
 		return err
 	}
-	return ur.db.QueryRow("SELECT last_insert_rowid()").Scan(&u.Id)
+
+	var id int
+
+	err = ur.db.QueryRow("SELECT last_insert_rowid()").Scan(&id)
+	if err != nil {
+		return err
+	}
+
+	u.SetId(id)
+
+	return nil
+}
+
+func (ur UserRepository) Delete(u i.User) error {
+	_, err := ur.db.Exec(
+		"DELETE FROM User WHERE id = $1", u.GetId(),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
