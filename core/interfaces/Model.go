@@ -9,3 +9,12 @@ type User interface {
 	GetUsername() string
 	UpdateFromAnother(other User)
 }
+
+type ChatRoom interface {
+	GetId() int
+	SetId(id int)
+	GetName() string
+	GetCategory() int
+	GetCreatorId() int
+	GetCreator() User
+}
