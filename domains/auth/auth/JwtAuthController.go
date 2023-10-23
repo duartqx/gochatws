@@ -44,7 +44,8 @@ func NewJwtAuthController(ur *u.UserRepository, se *[]byte) *JwtAuthController {
 	}
 }
 
-func (jc JwtAuthController) getTokenFromCtx(c *fiber.Ctx) string {
+// private
+func (jc JwtAuthController) getUnparsedToken(c *fiber.Ctx) string {
 	var (
 		token string
 		found bool
@@ -54,15 +55,37 @@ func (jc JwtAuthController) getTokenFromCtx(c *fiber.Ctx) string {
 
 	if token != "" {
 		token, found = strings.CutPrefix(token, "Bearer ")
-		if !found {
-			return ""
+		if found {
+			return token
 		}
-		return token
 	}
-
 	return c.Cookies("jwt")
 }
 
+// private
+func (jc JwtAuthController) getParsedToken(c *fiber.Ctx) *jwt.Token {
+
+	unparsedToken := jc.getUnparsedToken(c)
+	if unparsedToken == "" {
+		return nil
+	}
+
+	if _, sessionOk := (*jc.sessionStore)[unparsedToken]; !sessionOk {
+		return nil
+	}
+
+	parsedToken, err := jwt.Parse(unparsedToken, jc.keyFunc)
+	if err != nil || !parsedToken.Valid {
+
+		delete(*jc.sessionStore, unparsedToken)
+
+		return nil
+	}
+
+	return parsedToken
+}
+
+// private
 func (jc JwtAuthController) generateToken(user *ClaimsUser, expiresAt time.Time) (
 	string, *fiber.Cookie, error,
 ) {
@@ -94,40 +117,43 @@ func (jc JwtAuthController) generateToken(user *ClaimsUser, expiresAt time.Time)
 	return tokenStr, &cookie, nil
 }
 
+// private
 func (jc JwtAuthController) keyFunc(t *jwt.Token) (interface{}, error) {
 	return *jc.secret, nil
 }
 
+// public
+func (jc JwtAuthController) AuthNotLoggedMiddleware(c *fiber.Ctx) error {
+	if jc.getParsedToken(c) != nil {
+		return c.
+			Status(http.StatusUnauthorized).
+			JSON(e.LoggedInError)
+	}
+	return c.Next()
+}
+
+// public
 func (jc JwtAuthController) AuthMiddleware(c *fiber.Ctx) error {
-	unparsedToken := jc.getTokenFromCtx(c)
-
-	if unparsedToken == "" {
+	token := jc.getParsedToken(c)
+	if token == nil {
 		return c.
 			Status(http.StatusUnauthorized).
 			JSON(e.InvalidTokenError)
 	}
 
-	_, sessionOk := (*jc.sessionStore)[unparsedToken]
-
-	if !sessionOk {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
 		return c.
 			Status(http.StatusUnauthorized).
 			JSON(e.InvalidTokenError)
 	}
 
-	parsedToken, err := jwt.Parse(unparsedToken, jc.keyFunc)
-	if err != nil || !parsedToken.Valid {
-
-		delete(*jc.sessionStore, unparsedToken)
-
-		return c.
-			Status(http.StatusUnauthorized).
-			JSON(e.InvalidTokenError)
-	}
+	c.Locals("user", claims["user"])
 
 	return c.Next()
 }
 
+// public
 func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 
 	bodyUser, err := jc.userRepository.Parse(c.BodyParser)
@@ -141,22 +167,26 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 	if err != nil {
 		return c.
 			Status(http.StatusUnauthorized).
-			JSON(e.WrongUsernameOrPassword)
+			JSON(e.WrongUsernameOrPasswordError)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(dbUser.Password), []byte(bodyUser.Password),
+		[]byte(dbUser.GetPassword()), []byte(bodyUser.Password),
 	); err != nil {
 		return c.
 			Status(http.StatusUnauthorized).
-			JSON(e.WrongUsernameOrPassword)
+			JSON(e.WrongUsernameOrPasswordError)
 	}
 
 	createdAt := time.Now()
 	expiresAt := createdAt.Add(time.Hour * 12)
 
 	tokenStr, cookie, err := jc.generateToken(
-		&ClaimsUser{Id: dbUser.Id, Username: dbUser.Username, Name: dbUser.Name},
+		&ClaimsUser{
+			Id:       dbUser.GetId(),
+			Username: dbUser.GetUsername(),
+			Name:     dbUser.GetName(),
+		},
 		expiresAt,
 	)
 	if err != nil {
@@ -166,7 +196,7 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 	}
 
 	(*jc.sessionStore)[tokenStr] = &s.SessionModel{
-		Token: tokenStr, CreationAt: createdAt, UserId: dbUser.Id,
+		Token: tokenStr, CreationAt: createdAt, UserId: dbUser.GetId(),
 	}
 
 	c.Cookie(cookie)
@@ -183,9 +213,10 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 		)
 }
 
+// public
 func (jc JwtAuthController) Logout(c *fiber.Ctx) error {
 
-	sessionToken := jc.getTokenFromCtx(c)
+	sessionToken := jc.getUnparsedToken(c)
 
 	delete(*jc.sessionStore, sessionToken)
 
