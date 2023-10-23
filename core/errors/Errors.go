@@ -4,6 +4,7 @@ import "github.com/go-playground/validator/v10"
 
 var (
 	// map[string]string Errors
+	BadRequestError         = map[string]string{"error": "Bad Request"}
 	InternalError           = map[string]string{"error": "Internal"}
 	InvalidUsernameError    = map[string]string{"error": "Invalid username"}
 	InvalidTokenError       = map[string]string{"error": "Invalid or missing token"}
