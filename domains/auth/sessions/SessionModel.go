@@ -7,3 +7,7 @@ type SessionModel struct {
 	UserId     int       `db:"user_id"`
 	CreationAt time.Time `db:"creation_at"`
 }
+
+func (sm SessionModel) GetToken() string {
+	return sm.Token
+}
