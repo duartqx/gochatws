@@ -19,12 +19,20 @@ func (u UserModel) GetId() int {
 	return u.Id
 }
 
+func (u *UserModel) SetId(id int) {
+	u.Id = id
+}
+
 func (u UserModel) GetName() string {
 	return u.Name
 }
 
 func (u UserModel) GetUsername() string {
 	return u.Username
+}
+
+func (u UserModel) GetPassword() string {
+	return u.Password
 }
 
 func (u *UserModel) UpdateFromAnother(other i.User) {
@@ -77,10 +85,16 @@ func (u UserClean) GetId() int {
 	return u.Id
 }
 
+func (u *UserClean) SetId(id int) {}
+
 func (u UserClean) GetName() string {
 	return u.Name
 }
 
 func (u UserClean) GetUsername() string {
 	return u.Username
+}
+
+func (u UserClean) GetPassword() string {
+	return ""
 }
