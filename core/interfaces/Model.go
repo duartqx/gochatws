@@ -20,3 +20,7 @@ type ChatRoom interface {
 	GetCreatorId() int
 	GetCreator() User
 }
+
+type Session interface {
+	GetToken() string
+}
