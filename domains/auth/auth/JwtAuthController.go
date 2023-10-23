@@ -11,11 +11,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	e "github.com/duartqx/gochatws/core/errors"
+	i "github.com/duartqx/gochatws/core/interfaces"
 	s "github.com/duartqx/gochatws/domains/auth/sessions"
 	u "github.com/duartqx/gochatws/domains/auth/users"
 )
-
-type sessionStore map[string]*s.SessionModel
 
 type ClaimsUser struct {
 	Id       int
@@ -33,14 +32,14 @@ type LoginResponse struct {
 type JwtAuthController struct {
 	userRepository *u.UserRepository
 	secret         *[]byte
-	sessionStore   *sessionStore
+	sessionStore   i.SessionStore
 }
 
-func NewJwtAuthController(ur *u.UserRepository, se *[]byte) *JwtAuthController {
+func NewJwtAuthController(ur *u.UserRepository, se *[]byte, ss i.SessionStore) *JwtAuthController {
 	return &JwtAuthController{
 		userRepository: ur,
 		secret:         se,
-		sessionStore:   &sessionStore{},
+		sessionStore:   ss,
 	}
 }
 
@@ -70,14 +69,14 @@ func (jc JwtAuthController) getParsedToken(c *fiber.Ctx) *jwt.Token {
 		return nil
 	}
 
-	if _, sessionOk := (*jc.sessionStore)[unparsedToken]; !sessionOk {
+	if _, err := jc.sessionStore.Get(unparsedToken); err != nil {
 		return nil
 	}
 
 	parsedToken, err := jwt.Parse(unparsedToken, jc.keyFunc)
 	if err != nil || !parsedToken.Valid {
 
-		delete(*jc.sessionStore, unparsedToken)
+		jc.sessionStore.Delete(unparsedToken)
 
 		return nil
 	}
@@ -195,8 +194,12 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 			JSON(e.InternalError)
 	}
 
-	(*jc.sessionStore)[tokenStr] = &s.SessionModel{
+	if err := jc.sessionStore.Set(tokenStr, &s.SessionModel{
 		Token: tokenStr, CreationAt: createdAt, UserId: dbUser.GetId(),
+	}); err != nil {
+		return c.
+			Status(http.StatusInternalServerError).
+			JSON(e.InternalError)
 	}
 
 	c.Cookie(cookie)
@@ -218,7 +221,11 @@ func (jc JwtAuthController) Logout(c *fiber.Ctx) error {
 
 	sessionToken := jc.getUnparsedToken(c)
 
-	delete(*jc.sessionStore, sessionToken)
+	if err := jc.sessionStore.Delete(sessionToken); err != nil {
+		return c.
+			Status(http.StatusUnauthorized).
+			JSON(e.UnauthorizedError)
+	}
 
 	return c.
 		Status(http.StatusOK).
