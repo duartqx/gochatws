@@ -2,16 +2,20 @@ package errors
 
 import "github.com/go-playground/validator/v10"
 
+type ErrorResponse map[string]string
+
 var (
 	// map[string]string Errors
-	BadRequestError         = map[string]string{"error": "Bad Request"}
-	InternalError           = map[string]string{"error": "Internal"}
-	InvalidUsernameError    = map[string]string{"error": "Invalid username"}
-	InvalidTokenError       = map[string]string{"error": "Invalid or missing token"}
-	WrongUsernameOrPassword = map[string]string{"error": "Wrong username or password"}
-	NotFoundError           = map[string]string{"error": "Not Found"}
-	PasswordTooLongError    = map[string]string{"error": "Unfortunately your password is too long"}
-	SerializerError         = map[string]string{"error": "Error deserializing JSON"}
+	BadRequestError              = ErrorResponse{"error": "Bad Request"}
+	InternalError                = ErrorResponse{"error": "Internal"}
+	InvalidUsernameError         = ErrorResponse{"error": "Invalid username"}
+	InvalidTokenError            = ErrorResponse{"error": "Invalid or missing token"}
+	WrongUsernameOrPasswordError = ErrorResponse{"error": "Wrong username or password"}
+	LoggedInError                = ErrorResponse{"error": "You are logged in"}
+	NotFoundError                = ErrorResponse{"error": "Not Found"}
+	PasswordTooLongError         = ErrorResponse{"error": "Unfortunately your password is too long"}
+	SerializerError              = ErrorResponse{"error": "Error deserializing JSON"}
+	UnauthorizedError            = ErrorResponse{"error": "Unauthorized, please check your token or contact the support"}
 
 	// func Errors
 	CustomMessageError = func(err interface{}) map[string]interface{} {
