@@ -53,7 +53,7 @@ func (ur UserRepository) ParseAndValidate(parser i.ParserFunc) (
 	return ur.GetModel().ParseAndValidate(parser, ur.v)
 }
 
-func (ur UserRepository) Parse(parser i.ParserFunc) (*UserModel, error) {
+func (ur UserRepository) Parse(parser i.ParserFunc) (i.User, error) {
 	parsedUser := ur.GetModel()
 
 	if err := parser(parsedUser); err != nil {

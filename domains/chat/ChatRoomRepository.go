@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	i "github.com/duartqx/gochatws/core/interfaces"
-	u "github.com/duartqx/gochatws/domains/auth/users"
+	u "github.com/duartqx/gochatws/domains/users"
 	"github.com/jmoiron/sqlx"
 )
 

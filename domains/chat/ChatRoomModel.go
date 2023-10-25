@@ -2,7 +2,7 @@ package chat
 
 import (
 	i "github.com/duartqx/gochatws/core/interfaces"
-	u "github.com/duartqx/gochatws/domains/auth/users"
+	u "github.com/duartqx/gochatws/domains/users"
 )
 
 type ChatRoomModel struct {

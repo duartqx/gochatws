@@ -12,8 +12,7 @@ import (
 
 	e "github.com/duartqx/gochatws/core/errors"
 	i "github.com/duartqx/gochatws/core/interfaces"
-	s "github.com/duartqx/gochatws/domains/auth/sessions"
-	u "github.com/duartqx/gochatws/domains/auth/users"
+	s "github.com/duartqx/gochatws/core/sessions"
 )
 
 type ClaimsUser struct {
@@ -30,12 +29,12 @@ type LoginResponse struct {
 }
 
 type JwtAuthController struct {
-	userRepository *u.UserRepository
+	userRepository i.UserRepository
 	secret         *[]byte
 	sessionStore   i.SessionStore
 }
 
-func NewJwtAuthController(ur *u.UserRepository, se *[]byte, ss i.SessionStore) *JwtAuthController {
+func NewJwtAuthController(ur i.UserRepository, se *[]byte, ss i.SessionStore) *JwtAuthController {
 	return &JwtAuthController{
 		userRepository: ur,
 		secret:         se,
@@ -162,7 +161,7 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 			JSON(e.SerializerError)
 	}
 
-	dbUser, err := jc.userRepository.FindByUsername(bodyUser.Username)
+	dbUser, err := jc.userRepository.FindByUsername(bodyUser.GetUsername())
 	if err != nil {
 		return c.
 			Status(http.StatusUnauthorized).
@@ -170,7 +169,7 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(dbUser.GetPassword()), []byte(bodyUser.Password),
+		[]byte(dbUser.GetPassword()), []byte(bodyUser.GetPassword()),
 	); err != nil {
 		return c.
 			Status(http.StatusUnauthorized).

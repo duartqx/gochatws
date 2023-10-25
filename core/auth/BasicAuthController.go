@@ -12,15 +12,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	e "github.com/duartqx/gochatws/core/errors"
-	u "github.com/duartqx/gochatws/domains/auth/users"
+	i "github.com/duartqx/gochatws/core/interfaces"
 )
 
 type BasicAuthController struct {
-	userRepository *u.UserRepository
+	userRepository i.UserRepository
 	sessionStore   *session.Store
 }
 
-func NewBasicAuthController(ur *u.UserRepository, st *session.Store) *BasicAuthController {
+func NewBasicAuthController(ur i.UserRepository, st *session.Store) *BasicAuthController {
 	return &BasicAuthController{
 		userRepository: ur,
 		sessionStore:   st,
@@ -100,19 +100,19 @@ func (lm BasicAuthController) AuthMiddleware(c *fiber.Ctx) error {
 	if userInterface == nil {
 		return c.SendStatus(http.StatusUnauthorized)
 	}
-	user, ok := userInterface.(u.UserModel)
+	user, ok := userInterface.(i.User)
 	if !ok {
 		return c.SendStatus(http.StatusUnauthorized)
 	}
 
 	// Gets username and password from Authorization: Basic header
 	username, password, err := lm.basicAuth(c.Get("Authorization"))
-	if err != nil || username != user.Username {
+	if err != nil || username != user.GetUsername() {
 		return c.SendStatus(http.StatusUnauthorized)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(user.Password), []byte(password),
+		[]byte(user.GetPassword()), []byte(password),
 	); err != nil {
 		return c.SendStatus(http.StatusUnauthorized)
 	}

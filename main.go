@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
-	a "github.com/duartqx/gochatws/domains/auth/auth"
-	s "github.com/duartqx/gochatws/domains/auth/sessions"
-	u "github.com/duartqx/gochatws/domains/auth/users"
+	a "github.com/duartqx/gochatws/core/auth"
+	s "github.com/duartqx/gochatws/core/sessions"
 	c "github.com/duartqx/gochatws/domains/chat"
+	u "github.com/duartqx/gochatws/domains/users"
 
 	"github.com/go-playground/validator/v10"
 	// "github.com/gofiber/contrib/websocket"

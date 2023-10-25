@@ -10,4 +10,6 @@ type ChatRepository interface {
 
 type UserRepository interface {
 	FindById(id int) (User, error)
+	FindByUsername(username string) (User, error)
+	Parse(parser ParserFunc) (User, error)
 }
