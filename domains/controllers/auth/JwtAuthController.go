@@ -8,7 +8,7 @@ import (
 
 	as "github.com/duartqx/gochatws/core/auth/service"
 	e "github.com/duartqx/gochatws/core/errors"
-	u "github.com/duartqx/gochatws/domains/users"
+	m "github.com/duartqx/gochatws/domains/models"
 )
 
 type JwtAuthController struct {
@@ -62,7 +62,7 @@ func (jc JwtAuthController) AuthMiddleware(c *fiber.Ctx) error {
 // public
 func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 
-	user := &u.UserModel{}
+	user := &m.UserModel{}
 
 	if err := c.BodyParser(user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(e.BadRequestError)

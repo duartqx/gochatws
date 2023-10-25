@@ -1,20 +1,23 @@
-package users
+package tests
 
 import (
 	"encoding/json"
 	"testing"
 
-	i "github.com/duartqx/gochatws/core/interfaces"
 	"github.com/go-playground/validator/v10"
+
+	i "github.com/duartqx/gochatws/core/interfaces"
+	m "github.com/duartqx/gochatws/domains/models"
+	r "github.com/duartqx/gochatws/domains/repositories"
 )
 
 func TestUserModel(t *testing.T) {
 
 	v := validator.New()
 
-	var user i.User = &UserModel{}
+	var user i.User = &m.UserModel{}
 
-	if _, ok := user.(*UserModel); !ok {
+	if _, ok := user.(*m.UserModel); !ok {
 		t.Errorf("FAILED: UserModel does not implements the User interface!\n")
 	}
 	t.Logf("PASSED: UserModel implements User interface\n")
@@ -28,7 +31,7 @@ func TestUserModel(t *testing.T) {
 		return json.Unmarshal(jsonBody, &out)
 	}
 
-	parsedOther := &UserModel{}
+	parsedOther := &m.UserModel{}
 	if err := parser(parsedOther); err != nil {
 		t.Errorf("FAILED: User was not able to parse!\n")
 	}
@@ -52,7 +55,7 @@ func TestUserModel(t *testing.T) {
 	}
 	t.Logf("PASSED: UserModel parsed correctly\n")
 
-	userFromOther := UserModel{}
+	userFromOther := m.UserModel{}
 
 	userFromOther.UpdateFromAnother(parsedOther)
 
@@ -65,7 +68,7 @@ func TestUserModel(t *testing.T) {
 
 func TestUserRepositoryImplementsRepository(t *testing.T) {
 
-	var userRepository i.UserRepository = UserRepository{}
+	var userRepository i.UserRepository = r.UserRepository{}
 
 	if _, ok := userRepository.(i.UserRepository); !ok {
 		t.Errorf("FAILED: UserRepository does not Implements Repository!\n")

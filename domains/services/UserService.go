@@ -1,4 +1,4 @@
-package users
+package services
 
 import (
 	"fmt"
@@ -10,14 +10,15 @@ import (
 	e "github.com/duartqx/gochatws/core/errors"
 	h "github.com/duartqx/gochatws/core/http"
 	i "github.com/duartqx/gochatws/core/interfaces"
+	r "github.com/duartqx/gochatws/domains/repositories"
 )
 
 type UserService struct {
-	userRepository *UserRepository
+	userRepository *r.UserRepository
 	validator      *validator.Validate
 }
 
-func NewUserService(userRespository *UserRepository, v *validator.Validate) *UserService {
+func NewUserService(userRespository *r.UserRepository, v *validator.Validate) *UserService {
 	return &UserService{
 		userRepository: userRespository,
 		validator:      v,

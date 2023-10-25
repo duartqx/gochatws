@@ -1,16 +1,15 @@
-package chat
+package models
 
 import (
 	i "github.com/duartqx/gochatws/core/interfaces"
-	u "github.com/duartqx/gochatws/domains/users"
 )
 
 type ChatRoomModel struct {
-	Id        int          `db:"id" json:"id"`
-	CreatorId int          `db:"creator_id" json:"creator_id"`
-	Name      string       `db:"name" json:"name"`
-	Category  int          `db:"category" json:"category"`
-	U         *u.UserClean `json:"creator"`
+	Id        int        `db:"id" json:"id"`
+	CreatorId int        `db:"creator_id" json:"creator_id"`
+	Name      string     `db:"name" json:"name"`
+	Category  int        `db:"category" json:"category"`
+	U         *UserClean `json:"creator"`
 }
 
 func (crm ChatRoomModel) GetId() int {

@@ -3,21 +3,21 @@ package main
 import (
 	"log"
 
-	ac "github.com/duartqx/gochatws/core/auth/controllers"
-	as "github.com/duartqx/gochatws/core/auth/service"
-
-	"github.com/duartqx/gochatws/core/sessions"
-	"github.com/duartqx/gochatws/domains/chat"
-	"github.com/duartqx/gochatws/domains/users"
-
-	c "github.com/duartqx/gochatws/domains/controllers"
-
 	"github.com/go-playground/validator/v10"
 	// "github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+
+	as "github.com/duartqx/gochatws/core/auth/service"
+	ac "github.com/duartqx/gochatws/domains/controllers/auth"
+
+	"github.com/duartqx/gochatws/core/sessions"
+
+	c "github.com/duartqx/gochatws/domains/controllers"
+	r "github.com/duartqx/gochatws/domains/repositories"
+	s "github.com/duartqx/gochatws/domains/services"
 )
 
 func setApp(db *sqlx.DB) *fiber.App {
@@ -30,17 +30,17 @@ func setApp(db *sqlx.DB) *fiber.App {
 	sessionStore := sessions.NewSessionStore()
 
 	// Repositories
-	userRepository := users.NewUserRepository(db)
-	chatRoomRepository := chat.NewChatRoomRepository(db, userRepository)
+	userRepository := r.NewUserRepository(db)
+	chatRoomRepository := r.NewChatRoomRepository(db, userRepository)
 
 	// Services
 	jwtAuthService := as.NewJwtAuthService(userRepository, &secret, sessionStore)
-	userService := users.NewUserService(userRepository, v)
+	userService := s.NewUserService(userRepository, v)
 
 	// Controllers
 	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
-	chatRoomController := chat.NewChatRoomController(chatRoomRepository)
+	chatRoomController := c.NewChatRoomController(chatRoomRepository)
 
 	// Logger middleware
 	app.Use(

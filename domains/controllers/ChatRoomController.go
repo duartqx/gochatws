@@ -1,4 +1,4 @@
-package chat
+package controllers
 
 import (
 	"net/http"

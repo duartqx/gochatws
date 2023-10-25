@@ -1,4 +1,4 @@
-package contr
+package controllers
 
 import (
 	"encoding/json"
@@ -9,14 +9,15 @@ import (
 
 	e "github.com/duartqx/gochatws/core/errors"
 	i "github.com/duartqx/gochatws/core/interfaces"
-	u "github.com/duartqx/gochatws/domains/users"
+	m "github.com/duartqx/gochatws/domains/models"
+	s "github.com/duartqx/gochatws/domains/services"
 )
 
 type UserController struct {
-	userService *u.UserService
+	userService *s.UserService
 }
 
-func NewUserController(us *u.UserService) *UserController {
+func NewUserController(us *s.UserService) *UserController {
 	return &UserController{userService: us}
 }
 
@@ -29,7 +30,7 @@ func (uc UserController) getUserFromLocals(localUser interface{}) (i.User, error
 		return nil, err
 	}
 
-	userStruct := &u.UserModel{}
+	userStruct := &m.UserModel{}
 	err = json.Unmarshal(userBytes, userStruct)
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func (uc UserController) Get(c *fiber.Ctx) error {
 }
 
 func (uc UserController) Create(c *fiber.Ctx) error {
-	user := &u.UserModel{}
+	user := &m.UserModel{}
 
 	if err := c.BodyParser(user); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(e.BadRequestError)
@@ -65,7 +66,7 @@ func (uc UserController) Create(c *fiber.Ctx) error {
 
 func (uc UserController) Update(c *fiber.Ctx) error {
 
-	bodyUser := &u.UserModel{}
+	bodyUser := &m.UserModel{}
 	if err := c.BodyParser(bodyUser); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(e.BadRequestError)
 	}

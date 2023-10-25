@@ -1,4 +1,4 @@
-package users
+package models
 
 import (
 	i "github.com/duartqx/gochatws/core/interfaces"

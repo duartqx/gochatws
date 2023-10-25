@@ -1,4 +1,4 @@
-package chat
+package repositories
 
 import (
 	"strconv"
@@ -6,7 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	i "github.com/duartqx/gochatws/core/interfaces"
-	u "github.com/duartqx/gochatws/domains/users"
+	m "github.com/duartqx/gochatws/domains/models"
 )
 
 const baseJoinQuery string = `
@@ -28,8 +28,8 @@ func NewChatRoomRepository(db *sqlx.DB, ur i.UserRepository) *ChatRoomRepository
 	}
 }
 
-func (crr ChatRoomRepository) GetModel() *ChatRoomModel {
-	return &ChatRoomModel{U: &u.UserClean{}}
+func (crr ChatRoomRepository) GetModel() *m.ChatRoomModel {
+	return &m.ChatRoomModel{U: &m.UserClean{}}
 }
 
 func (crr ChatRoomRepository) FindById(id int) (i.ChatRoom, error) {
@@ -109,7 +109,7 @@ func (crr ChatRoomRepository) Create(cr i.ChatRoom) error {
 	return nil
 }
 
-func (crr ChatRoomRepository) populateCreator(cr *ChatRoomModel) error {
+func (crr ChatRoomRepository) populateCreator(cr *m.ChatRoomModel) error {
 	creator, err := crr.ur.FindById(cr.CreatorId)
 	if err != nil {
 		return err

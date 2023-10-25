@@ -1,4 +1,4 @@
-package users
+package repositories
 
 import (
 	"strconv"
@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	i "github.com/duartqx/gochatws/core/interfaces"
+	m "github.com/duartqx/gochatws/domains/models"
 )
 
 type UserRepository struct {
@@ -16,12 +17,12 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (ur UserRepository) GetModel() *UserModel {
-	return &UserModel{}
+func (ur UserRepository) GetModel() *m.UserModel {
+	return &m.UserModel{}
 }
 
-func (ur UserRepository) GetCleanModel() *UserClean {
-	return &UserClean{}
+func (ur UserRepository) GetCleanModel() *m.UserClean {
+	return &m.UserClean{}
 }
 
 func (ur UserRepository) FindById(id int) (i.User, error) {
