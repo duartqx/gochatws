@@ -6,6 +6,7 @@ type User interface {
 	Clean() User
 	GetId() int
 	SetId(id int)
+	SetPassword(password string)
 	GetName() string
 	GetUsername() string
 	GetPassword() string

@@ -3,20 +3,17 @@ package users
 import (
 	"strconv"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
 
-	e "github.com/duartqx/gochatws/core/errors"
 	i "github.com/duartqx/gochatws/core/interfaces"
 )
 
 type UserRepository struct {
 	db *sqlx.DB
-	v  *validator.Validate
 }
 
-func NewUserRepository(db *sqlx.DB, v *validator.Validate) *UserRepository {
-	return &UserRepository{db: db, v: v}
+func NewUserRepository(db *sqlx.DB) *UserRepository {
+	return &UserRepository{db: db}
 }
 
 func (ur UserRepository) GetModel() *UserModel {
@@ -45,22 +42,6 @@ func (ur UserRepository) FindByUsername(username string) (i.User, error) {
 	user := ur.GetModel()
 	err := ur.db.Get(user, "SELECT * FROM User WHERE username = $1", username)
 	return user, err
-}
-
-func (ur UserRepository) ParseAndValidate(parser i.ParserFunc) (
-	*UserModel, error, *[]e.ValidationErrorResponse,
-) {
-	return ur.GetModel().ParseAndValidate(parser, ur.v)
-}
-
-func (ur UserRepository) Parse(parser i.ParserFunc) (i.User, error) {
-	parsedUser := ur.GetModel()
-
-	if err := parser(parsedUser); err != nil {
-		return nil, err
-	}
-
-	return parsedUser, nil
 }
 
 func (ur UserRepository) ExistsByUsername(username string) bool {

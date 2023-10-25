@@ -3,9 +3,10 @@ package chat
 import (
 	"strconv"
 
+	"github.com/jmoiron/sqlx"
+
 	i "github.com/duartqx/gochatws/core/interfaces"
 	u "github.com/duartqx/gochatws/domains/users"
-	"github.com/jmoiron/sqlx"
 )
 
 const baseJoinQuery string = `

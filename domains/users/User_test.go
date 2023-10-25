@@ -28,21 +28,26 @@ func TestUserModel(t *testing.T) {
 		return json.Unmarshal(jsonBody, &out)
 	}
 
-	parsedOther, err, validationErrs := UserModel{}.ParseAndValidate(parser, v)
-	if validationErrs != nil || err != nil {
-		t.Errorf("FAILED: Could not Validate UserModel: %s\n", err)
+	parsedOther := &UserModel{}
+	if err := parser(parsedOther); err != nil {
+		t.Errorf("FAILED: User was not able to parse!\n")
 	}
-	t.Logf("PASSED: UserModel validated\n")
+	t.Logf("PASSED: User parsed correctly!\n")
 
-	if parsedOther.Username != "other@teste.com" ||
-		parsedOther.Name != "Other" ||
-		parsedOther.Password != "password" {
+	if err := v.Struct(parsedOther); err != nil {
+		t.Errorf("FAILED: User did not validate!\n")
+	}
+	t.Logf("PASSED: User validated correctly!\n")
+
+	if parsedOther.GetUsername() != "other@teste.com" ||
+		parsedOther.GetName() != "Other" ||
+		parsedOther.GetPassword() != "password" {
 
 		t.Errorf(
 			"FAILED: Did not parsed correctly UserModel: %s, %s, %s",
-			parsedOther.Name,
-			parsedOther.Username,
-			parsedOther.Password,
+			parsedOther.GetPassword(),
+			parsedOther.GetUsername(),
+			parsedOther.GetName(),
 		)
 	}
 	t.Logf("PASSED: UserModel parsed correctly\n")
@@ -51,8 +56,8 @@ func TestUserModel(t *testing.T) {
 
 	userFromOther.UpdateFromAnother(parsedOther)
 
-	if userFromOther.Username != parsedOther.Username ||
-		userFromOther.Name != parsedOther.Name {
+	if userFromOther.GetUsername() != parsedOther.GetUsername() ||
+		userFromOther.GetName() != parsedOther.GetName() {
 		t.Errorf("FAILED: UpdateFromAnother did not update a User")
 	}
 	t.Logf("PASSED: UpdateFromAnother updates UserModel correctly\n")

@@ -6,13 +6,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
 	e "github.com/duartqx/gochatws/core/errors"
 	h "github.com/duartqx/gochatws/core/http"
 	i "github.com/duartqx/gochatws/core/interfaces"
 	s "github.com/duartqx/gochatws/core/sessions"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type ClaimsUser struct {
@@ -25,15 +26,20 @@ type JwtAuthService struct {
 	userRepository i.UserRepository
 	secret         *[]byte
 	sessionStore   i.SessionStore
+	validator      *validator.Validate
 }
 
 func NewJwtAuthService(
-	userRepository i.UserRepository, secret *[]byte, sessionStore i.SessionStore,
+	userRepository i.UserRepository,
+	secret *[]byte,
+	sessionStore i.SessionStore,
+	validator *validator.Validate,
 ) *JwtAuthService {
 	return &JwtAuthService{
 		userRepository: userRepository,
 		secret:         secret,
 		sessionStore:   sessionStore,
+		validator:      validator,
 	}
 }
 
@@ -105,33 +111,33 @@ func (jas JwtAuthService) GetParsedToken(authorization, cookie string) *jwt.Toke
 	return parsedToken
 }
 
-func (jas JwtAuthService) Login(parser i.ParserFunc) (*h.HttpResponse, error) {
+func (jas JwtAuthService) Login(user i.User) (*h.HttpResponse, error) {
 
-	bodyUser, err := jas.userRepository.Parse(parser)
-	if err != nil {
+	if user.GetUsername() == "" || user.GetPassword() == "" {
 		resp := &h.HttpResponse{
-			Status: http.StatusBadRequest, Body: e.SerializerError,
+			Status: http.StatusBadRequest,
+			Body:   e.BadRequestError,
 		}
-		return resp, fmt.Errorf("E")
+		return resp, fmt.Errorf("Missing required fields!")
 	}
 
-	dbUser, err := jas.userRepository.FindByUsername(bodyUser.GetUsername())
+	dbUser, err := jas.userRepository.FindByUsername(user.GetUsername())
 	if err != nil {
 		resp := &h.HttpResponse{
 			Status: http.StatusUnauthorized,
 			Body:   e.WrongUsernameOrPasswordError,
 		}
-		return resp, fmt.Errorf("E")
+		return resp, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(dbUser.GetPassword()), []byte(bodyUser.GetPassword()),
+		[]byte(dbUser.GetPassword()), []byte(user.GetPassword()),
 	); err != nil {
 		resp := &h.HttpResponse{
 			Status: http.StatusUnauthorized,
 			Body:   e.WrongUsernameOrPasswordError,
 		}
-		return resp, fmt.Errorf("E")
+		return resp, err
 	}
 
 	createdAt := time.Now()
@@ -150,7 +156,7 @@ func (jas JwtAuthService) Login(parser i.ParserFunc) (*h.HttpResponse, error) {
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
 		}
-		return resp, fmt.Errorf("E")
+		return resp, err
 	}
 
 	if err := jas.sessionStore.Set(tokenStr, &s.SessionModel{
@@ -160,7 +166,7 @@ func (jas JwtAuthService) Login(parser i.ParserFunc) (*h.HttpResponse, error) {
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
 		}
-		return resp, fmt.Errorf("E")
+		return resp, err
 	}
 
 	resp := &h.HttpResponse{
@@ -169,7 +175,7 @@ func (jas JwtAuthService) Login(parser i.ParserFunc) (*h.HttpResponse, error) {
 			Token:     tokenStr,
 			CreatedAt: createdAt,
 			ExpiresAt: expiresAt,
-			Status:    "Logged In",
+			Status:    "Valid",
 		},
 		Cookie: cookie,
 	}

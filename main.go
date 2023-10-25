@@ -27,14 +27,15 @@ func setApp(db *sqlx.DB) *fiber.App {
 	sessionStore := s.NewSessionStore()
 
 	// Repositories
-	userRepository := u.NewUserRepository(db, v)
+	userRepository := u.NewUserRepository(db)
 	chatRoomRepository := c.NewChatRoomRepository(db, userRepository)
 
 	// Services
-	jwtAuthService := as.NewJwtAuthService(userRepository, &secret, sessionStore)
+	jwtAuthService := as.NewJwtAuthService(userRepository, &secret, sessionStore, v)
+	userService := u.NewUserService(userRepository, v)
 
 	// Controllers
-	userController := u.NewUserController(userRepository)
+	userController := u.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
 	chatRoomController := c.NewChatRoomController(chatRoomRepository)
 

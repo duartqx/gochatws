@@ -1,11 +1,7 @@
 package users
 
 import (
-	e "github.com/duartqx/gochatws/core/errors"
-	c "github.com/duartqx/gochatws/core/interfaces"
 	i "github.com/duartqx/gochatws/core/interfaces"
-
-	"github.com/go-playground/validator/v10"
 )
 
 type UserModel struct {
@@ -21,6 +17,10 @@ func (u UserModel) GetId() int {
 
 func (u *UserModel) SetId(id int) {
 	u.Id = id
+}
+
+func (u *UserModel) SetPassword(password string) {
+	u.Password = password
 }
 
 func (u UserModel) GetName() string {
@@ -43,22 +43,6 @@ func (u *UserModel) UpdateFromAnother(other i.User) {
 	if other.GetUsername() != "" {
 		u.Username = other.GetUsername()
 	}
-}
-
-func (u UserModel) ParseAndValidate(parser c.ParserFunc, v *validator.Validate) (
-	*UserModel, error, *[]e.ValidationErrorResponse,
-) {
-	parsedUser := &UserModel{}
-
-	if err := parser(parsedUser); err != nil {
-		return nil, err, nil
-	}
-
-	if err := v.Struct(parsedUser); err != nil {
-		return nil, err, e.BuildErrorResponse(err)
-	}
-
-	return parsedUser, nil, nil
 }
 
 func (u UserModel) Clean() i.User {
@@ -86,6 +70,8 @@ func (u UserClean) GetId() int {
 }
 
 func (u *UserClean) SetId(id int) {}
+
+func (u *UserClean) SetPassword(password string) {}
 
 func (u UserClean) GetName() string {
 	return u.Name
