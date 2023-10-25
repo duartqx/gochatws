@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 
 	as "github.com/duartqx/gochatws/core/auth/service"
 	e "github.com/duartqx/gochatws/core/errors"
@@ -23,38 +22,28 @@ func NewJwtAuthController(jwtAuthService *as.JwtAuthService) *JwtAuthController 
 
 // public
 func (jc JwtAuthController) AuthNotLoggedMiddleware(c *fiber.Ctx) error {
-	var token *jwt.Token = jc.jwtAuthService.GetParsedToken(
+	claimsUser, _ := jc.jwtAuthService.ValidateAuth(
 		c.Get("Authorization"),
 		c.Cookies("jwt"),
 	)
-	if token != nil {
-		return c.
-			Status(http.StatusUnauthorized).
-			JSON(e.LoggedInError)
+	if claimsUser != nil {
+		return c.Status(http.StatusUnauthorized).JSON(e.LoggedInError)
 	}
 	return c.Next()
 }
 
 // public
 func (jc JwtAuthController) AuthMiddleware(c *fiber.Ctx) error {
-	var token *jwt.Token = jc.jwtAuthService.GetParsedToken(
+
+	claimsUser, err := jc.jwtAuthService.ValidateAuth(
 		c.Get("Authorization"),
 		c.Cookies("jwt"),
 	)
-	if token == nil {
-		return c.
-			Status(http.StatusUnauthorized).
-			JSON(e.InvalidTokenError)
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(e.InvalidTokenError)
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return c.
-			Status(http.StatusUnauthorized).
-			JSON(e.InvalidTokenError)
-	}
-
-	c.Locals("user", claims["user"])
+	c.Locals("user", claimsUser)
 
 	return c.Next()
 }
@@ -68,19 +57,17 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(e.BadRequestError)
 	}
 
-	response, err := jc.jwtAuthService.Login(user)
+	response := jc.jwtAuthService.Login(user)
 
-	if err != nil {
-		return c.Status(response.Status).JSON(response.Body)
+	if response.Cookie != nil {
+		c.Cookie(&fiber.Cookie{
+			Name:     response.Cookie.Name,
+			Value:    response.Cookie.Value,
+			Expires:  response.Cookie.Expires,
+			Secure:   response.Cookie.Secure,
+			HTTPOnly: response.Cookie.HTTPOnly,
+		})
 	}
-
-	c.Cookie(&fiber.Cookie{
-		Name:     response.Cookie.Name,
-		Value:    response.Cookie.Value,
-		Expires:  response.Cookie.Expires,
-		Secure:   response.Cookie.Secure,
-		HTTPOnly: response.Cookie.HTTPOnly,
-	})
 
 	return c.Status(response.Status).JSON(response.Body)
 }
@@ -88,18 +75,10 @@ func (jc JwtAuthController) Login(c *fiber.Ctx) error {
 // public
 func (jc JwtAuthController) Logout(c *fiber.Ctx) error {
 
-	sessionToken := jc.jwtAuthService.GetUnparsedToken(
+	response := jc.jwtAuthService.Logout(
 		c.Get("Authorization"),
 		c.Cookies("jwt"),
 	)
 
-	if err := jc.jwtAuthService.DeleteFromStore(sessionToken); err != nil {
-		return c.
-			Status(http.StatusUnauthorized).
-			JSON(e.UnauthorizedError)
-	}
-
-	return c.
-		Status(http.StatusOK).
-		JSON(fiber.Map{"status": "Logged out"})
+	return c.Status(response.Status).JSON(response.Body)
 }

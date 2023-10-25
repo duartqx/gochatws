@@ -76,7 +76,8 @@ func (jas JwtAuthService) generateToken(user *ClaimsUser, expiresAt time.Time) (
 	return tokenStr, cookie, nil
 }
 
-func (jas JwtAuthService) GetUnparsedToken(authorization, cookie string) string {
+// private
+func (jas JwtAuthService) getUnparsedToken(authorization, cookie string) string {
 	if authorization != "" {
 		token, found := strings.CutPrefix(authorization, "Bearer ")
 		if found {
@@ -86,15 +87,15 @@ func (jas JwtAuthService) GetUnparsedToken(authorization, cookie string) string 
 	return cookie
 }
 
-func (jas JwtAuthService) GetParsedToken(authorization, cookie string) *jwt.Token {
+func (jas JwtAuthService) ValidateAuth(authorization, cookie string) (interface{}, error) {
 
-	unparsedToken := jas.GetUnparsedToken(authorization, cookie)
+	unparsedToken := jas.getUnparsedToken(authorization, cookie)
 	if unparsedToken == "" {
-		return nil
+		return nil, fmt.Errorf("Missing Token")
 	}
 
 	if _, err := jas.sessionStore.Get(unparsedToken); err != nil {
-		return nil
+		return nil, fmt.Errorf("Missing session")
 	}
 
 	parsedToken, err := jwt.Parse(unparsedToken, jas.keyFunc)
@@ -102,39 +103,41 @@ func (jas JwtAuthService) GetParsedToken(authorization, cookie string) *jwt.Toke
 
 		jas.sessionStore.Delete(unparsedToken)
 
-		return nil
+		return nil, fmt.Errorf("Expired session")
 	}
 
-	return parsedToken
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("Could not parse claims")
+	}
+
+	return claims["user"], nil
 }
 
-func (jas JwtAuthService) Login(user i.User) (*h.HttpResponse, error) {
+func (jas JwtAuthService) Login(user i.User) *h.HttpResponse {
 
 	if user.GetUsername() == "" || user.GetPassword() == "" {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusBadRequest,
 			Body:   e.BadRequestError,
 		}
-		return resp, fmt.Errorf("Missing required fields!")
 	}
 
 	dbUser, err := jas.userRepository.FindByUsername(user.GetUsername())
 	if err != nil {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusUnauthorized,
 			Body:   e.WrongUsernameOrPasswordError,
 		}
-		return resp, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(dbUser.GetPassword()), []byte(user.GetPassword()),
 	); err != nil {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusUnauthorized,
 			Body:   e.WrongUsernameOrPasswordError,
 		}
-		return resp, err
 	}
 
 	createdAt := time.Now()
@@ -149,24 +152,22 @@ func (jas JwtAuthService) Login(user i.User) (*h.HttpResponse, error) {
 		expiresAt,
 	)
 	if err != nil {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
 		}
-		return resp, err
 	}
 
 	if err := jas.sessionStore.Set(tokenStr, &s.SessionModel{
 		Token: tokenStr, CreationAt: createdAt, UserId: dbUser.GetId(),
 	}); err != nil {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
 		}
-		return resp, err
 	}
 
-	resp := &h.HttpResponse{
+	return &h.HttpResponse{
 		Status: http.StatusOK,
 		Body: h.LoginResponse{
 			Token:     tokenStr,
@@ -176,9 +177,26 @@ func (jas JwtAuthService) Login(user i.User) (*h.HttpResponse, error) {
 		},
 		Cookie: cookie,
 	}
-	return resp, nil
 }
 
-func (jas *JwtAuthService) DeleteFromStore(token string) error {
-	return jas.sessionStore.Delete(token)
+func (jas *JwtAuthService) Logout(authorization, cookie string) *h.HttpResponse {
+	unparsedToken := jas.getUnparsedToken(authorization, cookie)
+	if unparsedToken == "" {
+		return &h.HttpResponse{
+			Status: http.StatusUnauthorized,
+			Body:   e.UnauthorizedError,
+		}
+	}
+
+	if err := jas.sessionStore.Delete(unparsedToken); err != nil {
+		return &h.HttpResponse{
+			Status: http.StatusUnauthorized,
+			Body:   e.UnauthorizedError,
+		}
+	}
+
+	return &h.HttpResponse{
+		Status: http.StatusOK,
+		Body:   map[string]string{"status": "Logged out"},
+	}
 }

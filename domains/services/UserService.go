@@ -41,7 +41,7 @@ func (us UserService) Get(userId int) *h.HttpResponse {
 	if err != nil {
 		return &h.HttpResponse{Status: http.StatusNotFound, Body: e.NotFoundError}
 	}
-	return &h.HttpResponse{Status: http.StatusNotFound, Body: dbUser.Clean()}
+	return &h.HttpResponse{Status: http.StatusOK, Body: dbUser.Clean()}
 }
 
 func (us UserService) Create(user i.User) *h.HttpResponse {
