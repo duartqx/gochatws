@@ -100,7 +100,6 @@ func (ur UserRepository) Create(u i.User) error {
 	}
 
 	var id int
-
 	err = ur.db.QueryRow("SELECT last_insert_rowid()").Scan(&id)
 	if err != nil {
 		return err

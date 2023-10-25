@@ -10,15 +10,14 @@ import (
 	e "github.com/duartqx/gochatws/core/errors"
 	h "github.com/duartqx/gochatws/core/http"
 	i "github.com/duartqx/gochatws/core/interfaces"
-	r "github.com/duartqx/gochatws/domains/repositories"
 )
 
 type UserService struct {
-	userRepository *r.UserRepository
+	userRepository i.UserRepository
 	validator      *validator.Validate
 }
 
-func NewUserService(userRespository *r.UserRepository, v *validator.Validate) *UserService {
+func NewUserService(userRespository i.UserRepository, v *validator.Validate) *UserService {
 	return &UserService{
 		userRepository: userRespository,
 		validator:      v,
@@ -71,7 +70,12 @@ func (us UserService) Create(user i.User) *h.HttpResponse {
 	}
 	user.SetPassword(string(hashedPassword))
 
-	us.userRepository.Create(user)
+	if err := us.userRepository.Create(user); err != nil {
+		return &h.HttpResponse{
+			Status: http.StatusInternalServerError,
+			Body:   e.InternalError,
+		}
+	}
 
 	return &h.HttpResponse{Status: http.StatusCreated, Body: user.Clean()}
 }
