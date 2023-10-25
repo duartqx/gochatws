@@ -36,11 +36,12 @@ func setApp(db *sqlx.DB) *fiber.App {
 	// Services
 	jwtAuthService := as.NewJwtAuthService(userRepository, &secret, sessionStore)
 	userService := s.NewUserService(userRepository, v)
+	chatRoomService := s.NewChatRoomService(chatRoomRepository)
 
 	// Controllers
 	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
-	chatRoomController := c.NewChatRoomController(chatRoomRepository)
+	chatRoomController := c.NewChatRoomController(chatRoomService)
 
 	// Logger middleware
 	app.Use(
@@ -72,6 +73,9 @@ func setApp(db *sqlx.DB) *fiber.App {
 		Delete("/", userController.Delete)
 
 	app.Group("/chat").
+		// Middleware
+		Use(authController.AuthMiddleware).
+		// Endpoints
 		Get("/", chatRoomController.All).
 		Post("/", chatRoomController.Create).
 		Get("/:id<int>", chatRoomController.One)

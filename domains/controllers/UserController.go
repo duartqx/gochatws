@@ -1,16 +1,14 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 
 	e "github.com/duartqx/gochatws/core/errors"
-	i "github.com/duartqx/gochatws/core/interfaces"
 	m "github.com/duartqx/gochatws/domains/models"
 	s "github.com/duartqx/gochatws/domains/services"
+	"github.com/duartqx/gochatws/domains/utils"
 )
 
 type UserController struct {
@@ -21,30 +19,13 @@ func NewUserController(us *s.UserService) *UserController {
 	return &UserController{userService: us}
 }
 
-func (uc UserController) getUserFromLocals(localUser interface{}) (i.User, error) {
-	if localUser == nil {
-		return nil, fmt.Errorf("User not found on Locals\n")
-	}
-	userBytes, err := json.Marshal(localUser)
-	if err != nil {
-		return nil, err
-	}
-
-	userStruct := &m.UserModel{}
-	err = json.Unmarshal(userBytes, userStruct)
-	if err != nil {
-		return nil, err
-	}
-	return userStruct, nil
-}
-
 func (uc UserController) All(c *fiber.Ctx) error {
 	response := uc.userService.All()
 	return c.Status(response.Status).JSON(response.Body)
 }
 
 func (uc UserController) Get(c *fiber.Ctx) error {
-	user, err := uc.getUserFromLocals(c.Locals("user"))
+	user, err := utils.GetUserFromLocals(c.Locals("user"))
 
 	if err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(e.UnauthorizedError)
@@ -71,7 +52,7 @@ func (uc UserController) Update(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(e.BadRequestError)
 	}
 
-	user, err := uc.getUserFromLocals(c.Locals("user"))
+	user, err := utils.GetUserFromLocals(c.Locals("user"))
 	if err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(e.UnauthorizedError)
 	}
@@ -84,7 +65,7 @@ func (uc UserController) Update(c *fiber.Ctx) error {
 
 func (uc UserController) Delete(c *fiber.Ctx) error {
 
-	user, err := uc.getUserFromLocals(c.Locals("user"))
+	user, err := utils.GetUserFromLocals(c.Locals("user"))
 	if err != nil {
 		return c.
 			Status(http.StatusUnauthorized).

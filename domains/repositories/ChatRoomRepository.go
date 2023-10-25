@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/jmoiron/sqlx"
@@ -17,19 +18,19 @@ const baseJoinQuery string = `
 `
 
 type ChatRoomRepository struct {
-	db *sqlx.DB
-	ur i.UserRepository
+	db             *sqlx.DB
+	userRepository i.UserRepository
 }
 
 func NewChatRoomRepository(db *sqlx.DB, ur i.UserRepository) *ChatRoomRepository {
 	return &ChatRoomRepository{
-		db: db,
-		ur: ur,
+		db:             db,
+		userRepository: ur,
 	}
 }
 
 func (crr ChatRoomRepository) GetModel() *m.ChatRoomModel {
-	return &m.ChatRoomModel{U: &m.UserClean{}}
+	return &m.ChatRoomModel{C: &m.UserClean{}}
 }
 
 func (crr ChatRoomRepository) FindById(id int) (i.ChatRoom, error) {
@@ -42,9 +43,9 @@ func (crr ChatRoomRepository) FindById(id int) (i.ChatRoom, error) {
 		&chatRoom.CreatorId,
 		&chatRoom.Name,
 		&chatRoom.Category,
-		&chatRoom.U.Id,
-		&chatRoom.U.Username,
-		&chatRoom.U.Name,
+		&chatRoom.C.Id,
+		&chatRoom.C.Username,
+		&chatRoom.C.Name,
 	); err != nil {
 		return nil, err
 	}
@@ -75,9 +76,9 @@ func (crr ChatRoomRepository) All() (*[]i.ChatRoom, error) {
 			&chatRoom.CreatorId,
 			&chatRoom.Name,
 			&chatRoom.Category,
-			&chatRoom.U.Id,
-			&chatRoom.U.Username,
-			&chatRoom.U.Name,
+			&chatRoom.C.Id,
+			&chatRoom.C.Username,
+			&chatRoom.C.Name,
 		); err != nil {
 			return nil, err
 		}
@@ -91,44 +92,32 @@ func (crr ChatRoomRepository) All() (*[]i.ChatRoom, error) {
 }
 
 func (crr ChatRoomRepository) Create(cr i.ChatRoom) error {
-	_, err := crr.db.Exec(`
+
+	if cr.GetCreatorId() == 0 {
+		return fmt.Errorf("Invalid Creator Id")
+	}
+
+	creator, err := crr.userRepository.FindById(cr.GetCreatorId())
+	if err != nil {
+		return err
+	}
+
+	_, err = crr.db.Exec(`
 		INSERT INTO ChatRoom (creator_id, name, category)
 		VALUES ($1, $2, $3)
 	`, cr.GetCreatorId(), cr.GetName(), cr.GetCategory())
 	if err != nil {
 		return err
 	}
+
 	var chatId int
 	err = crr.db.QueryRow("SELECT last_insert_rowid()").Scan(&chatId)
 	if err != nil {
 		return err
 	}
-
 	cr.SetId(chatId)
 
-	return nil
-}
-
-func (crr ChatRoomRepository) populateCreator(cr *m.ChatRoomModel) error {
-	creator, err := crr.ur.FindById(cr.CreatorId)
-	if err != nil {
-		return err
-	}
-
-	cr.U.Id = creator.GetId()
-	cr.U.Username = creator.GetUsername()
-	cr.U.Name = creator.GetName()
+	cr.PopulateCreator(creator)
 
 	return nil
-}
-
-func (crr ChatRoomRepository) ParseAndValidate(parser i.ParserFunc) (i.ChatRoom, error) {
-	parsedChatRoom := crr.GetModel()
-	if err := parser(parsedChatRoom); err != nil {
-		return nil, err
-	}
-	if err := crr.populateCreator(parsedChatRoom); err != nil {
-		return nil, err
-	}
-	return parsedChatRoom, nil
 }

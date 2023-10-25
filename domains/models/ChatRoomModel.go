@@ -9,7 +9,7 @@ type ChatRoomModel struct {
 	CreatorId int        `db:"creator_id" json:"creator_id"`
 	Name      string     `db:"name" json:"name"`
 	Category  int        `db:"category" json:"category"`
-	U         *UserClean `json:"creator"`
+	C         *UserClean `json:"creator"`
 }
 
 func (crm ChatRoomModel) GetId() int {
@@ -32,6 +32,18 @@ func (crm ChatRoomModel) GetCreatorId() int {
 	return crm.CreatorId
 }
 
+func (crm *ChatRoomModel) SetCreatorId(id int) {
+	crm.CreatorId = id
+}
+
 func (crm ChatRoomModel) GetCreator() i.User {
-	return crm.U
+	return crm.C
+}
+
+func (crm *ChatRoomModel) PopulateCreator(user i.User) {
+	crm.C = &UserClean{
+		Id:       user.GetId(),
+		Username: user.GetUsername(),
+		Name:     user.GetName(),
+	}
 }

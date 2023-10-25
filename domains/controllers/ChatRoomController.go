@@ -3,58 +3,47 @@ package controllers
 import (
 	"net/http"
 
-	e "github.com/duartqx/gochatws/core/errors"
-	i "github.com/duartqx/gochatws/core/interfaces"
 	"github.com/gofiber/fiber/v2"
+
+	e "github.com/duartqx/gochatws/core/errors"
+	m "github.com/duartqx/gochatws/domains/models"
+	s "github.com/duartqx/gochatws/domains/services"
+	"github.com/duartqx/gochatws/domains/utils"
 )
 
 type ChatRoomController struct {
-	crr i.ChatRepository
+	chatRoomService *s.ChatRoomService
 }
 
-func NewChatRoomController(crr i.ChatRepository) *ChatRoomController {
+func NewChatRoomController(crs *s.ChatRoomService) *ChatRoomController {
 	return &ChatRoomController{
-		crr: crr,
+		chatRoomService: crs,
 	}
 }
 
 func (crc ChatRoomController) All(c *fiber.Ctx) error {
-	chatRooms, err := crc.crr.All()
-	if err != nil {
-		return c.
-			Status(http.StatusInternalServerError).
-			JSON(e.InternalError)
-	}
-	return c.
-		Status(http.StatusOK).
-		JSON(chatRooms)
+	response := crc.chatRoomService.All()
+	return c.Status(response.Status).JSON(response.Body)
 }
 
 func (crc ChatRoomController) One(c *fiber.Ctx) error {
-	chatRoom, err := crc.crr.FindByParamId(c.Params("id"))
-	if err != nil {
-		return c.
-			Status(http.StatusNotFound).
-			JSON(e.NotFoundError)
-	}
-	return c.
-		Status(http.StatusOK).
-		JSON(chatRoom)
+	response := crc.chatRoomService.One(c.Params("id"))
+	return c.Status(response.Status).JSON(response.Body)
 }
 
 func (crc ChatRoomController) Create(c *fiber.Ctx) error {
-	parsedChatRoom, err := crc.crr.ParseAndValidate(c.BodyParser)
+
+	creator, err := utils.GetUserFromLocals(c.Locals("user"))
 	if err != nil {
-		return c.
-			Status(http.StatusBadRequest).
-			JSON(e.BadRequestError)
+		return c.Status(http.StatusUnauthorized).JSON(e.UnauthorizedError)
 	}
-	if err := crc.crr.Create(parsedChatRoom); err != nil {
-		return c.
-			Status(http.StatusInternalServerError).
-			JSON(e.InternalError)
+
+	chatRoom := &m.ChatRoomModel{}
+	if err := c.BodyParser(chatRoom); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(e.BadRequestError)
 	}
-	return c.
-		Status(http.StatusCreated).
-		JSON(parsedChatRoom)
+	chatRoom.SetCreatorId(creator.GetId())
+
+	response := crc.chatRoomService.Create(chatRoom)
+	return c.Status(response.Status).JSON(response.Body)
 }

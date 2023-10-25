@@ -19,7 +19,9 @@ type ChatRoom interface {
 	GetName() string
 	GetCategory() int
 	GetCreatorId() int
+	SetCreatorId(id int)
 	GetCreator() User
+	PopulateCreator(creator User)
 }
 
 type Session interface {
