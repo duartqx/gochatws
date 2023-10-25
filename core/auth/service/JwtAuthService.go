@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
@@ -26,20 +25,17 @@ type JwtAuthService struct {
 	userRepository i.UserRepository
 	secret         *[]byte
 	sessionStore   i.SessionStore
-	validator      *validator.Validate
 }
 
 func NewJwtAuthService(
 	userRepository i.UserRepository,
 	secret *[]byte,
 	sessionStore i.SessionStore,
-	validator *validator.Validate,
 ) *JwtAuthService {
 	return &JwtAuthService{
 		userRepository: userRepository,
 		secret:         secret,
 		sessionStore:   sessionStore,
-		validator:      validator,
 	}
 }
 
@@ -48,6 +44,7 @@ func (jas JwtAuthService) keyFunc(t *jwt.Token) (interface{}, error) {
 	return *jas.secret, nil
 }
 
+// private
 func (jas JwtAuthService) generateToken(user *ClaimsUser, expiresAt time.Time) (
 	string, *h.Cookie, error,
 ) {

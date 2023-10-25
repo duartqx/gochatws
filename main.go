@@ -5,9 +5,12 @@ import (
 
 	ac "github.com/duartqx/gochatws/core/auth/controllers"
 	as "github.com/duartqx/gochatws/core/auth/service"
-	s "github.com/duartqx/gochatws/core/sessions"
-	c "github.com/duartqx/gochatws/domains/chat"
-	u "github.com/duartqx/gochatws/domains/users"
+
+	"github.com/duartqx/gochatws/core/sessions"
+	"github.com/duartqx/gochatws/domains/chat"
+	"github.com/duartqx/gochatws/domains/users"
+
+	c "github.com/duartqx/gochatws/domains/controllers"
 
 	"github.com/go-playground/validator/v10"
 	// "github.com/gofiber/contrib/websocket"
@@ -24,20 +27,20 @@ func setApp(db *sqlx.DB) *fiber.App {
 	// Raw dependencies
 	secret := []byte("secret")
 	v := validator.New()
-	sessionStore := s.NewSessionStore()
+	sessionStore := sessions.NewSessionStore()
 
 	// Repositories
-	userRepository := u.NewUserRepository(db)
-	chatRoomRepository := c.NewChatRoomRepository(db, userRepository)
+	userRepository := users.NewUserRepository(db)
+	chatRoomRepository := chat.NewChatRoomRepository(db, userRepository)
 
 	// Services
-	jwtAuthService := as.NewJwtAuthService(userRepository, &secret, sessionStore, v)
-	userService := u.NewUserService(userRepository, v)
+	jwtAuthService := as.NewJwtAuthService(userRepository, &secret, sessionStore)
+	userService := users.NewUserService(userRepository, v)
 
 	// Controllers
-	userController := u.NewUserController(userService)
+	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
-	chatRoomController := c.NewChatRoomController(chatRoomRepository)
+	chatRoomController := chat.NewChatRoomController(chatRoomRepository)
 
 	// Logger middleware
 	app.Use(

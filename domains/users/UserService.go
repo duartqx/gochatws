@@ -24,104 +24,88 @@ func NewUserService(userRespository *UserRepository, v *validator.Validate) *Use
 	}
 }
 
-func (us UserService) All() (*h.HttpResponse, error) {
+func (us UserService) All() *h.HttpResponse {
 	users, err := us.userRepository.All()
 	if err != nil {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
 		}
-		return resp, fmt.Errorf("Could not read All users")
 	}
-	resp := &h.HttpResponse{Status: http.StatusOK, Body: users}
-	return resp, nil
+	return &h.HttpResponse{Status: http.StatusOK, Body: users}
 }
 
-func (us UserService) Get(userId int) (*h.HttpResponse, error) {
+func (us UserService) Get(userId int) *h.HttpResponse {
 	dbUser, err := us.userRepository.FindById(userId)
 	if err != nil {
-		resp := &h.HttpResponse{
-			Status: http.StatusNotFound,
-			Body:   e.NotFoundError,
-		}
-		return resp, fmt.Errorf("User not found")
+		return &h.HttpResponse{Status: http.StatusNotFound, Body: e.NotFoundError}
 	}
-	resp := &h.HttpResponse{Status: http.StatusNotFound, Body: dbUser.Clean()}
-	return resp, nil
+	return &h.HttpResponse{Status: http.StatusNotFound, Body: dbUser.Clean()}
 }
 
-func (us UserService) Create(user i.User) (*h.HttpResponse, error) {
+func (us UserService) Create(user i.User) *h.HttpResponse {
 
 	if err := us.validator.Struct(user); err != nil {
 		resp := &h.HttpResponse{
 			Status: http.StatusBadRequest,
 			Body:   e.ValidationError(e.BuildErrorResponse(err)),
 		}
-		return resp, fmt.Errorf("Validation Error")
+		return resp
 	}
 
 	if us.userRepository.ExistsByUsername(user.GetUsername()) {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusBadRequest,
 			Body:   e.InvalidUsernameError,
 		}
-		return resp, fmt.Errorf("Username not unique")
 	}
 
 	hashedPassword, err :=
 		bcrypt.GenerateFromPassword([]byte(user.GetPassword()), 10)
 	if err != nil {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusBadRequest,
 			Body:   e.PasswordTooLongError,
 		}
-		return resp, fmt.Errorf("Password too long error")
 	}
 	user.SetPassword(string(hashedPassword))
 
 	us.userRepository.Create(user)
 
-	resp := &h.HttpResponse{Status: http.StatusCreated, Body: user.Clean()}
-	return resp, nil
+	return &h.HttpResponse{Status: http.StatusCreated, Body: user.Clean()}
 }
 
-func (us UserService) Update(bodyUser i.User) (*h.HttpResponse, error) {
+func (us UserService) Update(bodyUser i.User) *h.HttpResponse {
 
 	if err := us.validator.Struct(bodyUser); err != nil {
-		resp := &h.HttpResponse{
+		return &h.HttpResponse{
 			Status: http.StatusBadRequest,
 			Body:   e.ValidationError(e.BuildErrorResponse(err)),
 		}
-		return resp, fmt.Errorf("Validation Error")
 	}
 
 	dbUser, err := us.userRepository.FindById(bodyUser.GetId())
 	if err != nil {
-		resp := &h.HttpResponse{
-			Status: http.StatusNotFound,
-			Body:   e.NotFoundError,
-		}
-		return resp, fmt.Errorf("User not found")
+		return &h.HttpResponse{Status: http.StatusNotFound, Body: e.NotFoundError}
 	}
 
 	dbUser.UpdateFromAnother(bodyUser)
-	resp := &h.HttpResponse{Status: http.StatusOK, Body: dbUser.Clean()}
-	return resp, nil
+	return &h.HttpResponse{Status: http.StatusOK, Body: dbUser.Clean()}
 }
 
-func (us UserService) Delete(user i.User) (*h.HttpResponse, error) {
+func (us UserService) Delete(user i.User) *h.HttpResponse {
 	err := us.userRepository.Delete(user)
 	if err != nil {
 		resp := &h.HttpResponse{
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
 		}
-		return resp, fmt.Errorf("Could not delete user")
+		return resp
 	}
 	msg := fmt.Sprintf("Successfully deleted user with id: %d", user.GetId())
 	resp := &h.HttpResponse{
 		Status: http.StatusOK,
 		Body:   map[string]string{"user": msg},
 	}
-	return resp, nil
+	return resp
 }

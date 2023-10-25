@@ -1,4 +1,4 @@
-package users
+package contr
 
 import (
 	"encoding/json"
@@ -9,13 +9,14 @@ import (
 
 	e "github.com/duartqx/gochatws/core/errors"
 	i "github.com/duartqx/gochatws/core/interfaces"
+	u "github.com/duartqx/gochatws/domains/users"
 )
 
 type UserController struct {
-	userService *UserService
+	userService *u.UserService
 }
 
-func NewUserController(us *UserService) *UserController {
+func NewUserController(us *u.UserService) *UserController {
 	return &UserController{userService: us}
 }
 
@@ -28,7 +29,7 @@ func (uc UserController) getUserFromLocals(localUser interface{}) (i.User, error
 		return nil, err
 	}
 
-	userStruct := &UserModel{}
+	userStruct := &u.UserModel{}
 	err = json.Unmarshal(userBytes, userStruct)
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (uc UserController) getUserFromLocals(localUser interface{}) (i.User, error
 }
 
 func (uc UserController) All(c *fiber.Ctx) error {
-	response, _ := uc.userService.All()
+	response := uc.userService.All()
 	return c.Status(response.Status).JSON(response.Body)
 }
 
@@ -47,24 +48,24 @@ func (uc UserController) Get(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(e.UnauthorizedError)
 	}
-	response, _ := uc.userService.Get(user.GetId())
+	response := uc.userService.Get(user.GetId())
 	return c.Status(response.Status).JSON(response.Body)
 }
 
 func (uc UserController) Create(c *fiber.Ctx) error {
-	user := &UserModel{}
+	user := &u.UserModel{}
 
 	if err := c.BodyParser(user); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(e.BadRequestError)
 	}
 
-	response, _ := uc.userService.Create(user)
+	response := uc.userService.Create(user)
 	return c.Status(response.Status).JSON(response.Body)
 }
 
 func (uc UserController) Update(c *fiber.Ctx) error {
 
-	bodyUser := &UserModel{}
+	bodyUser := &u.UserModel{}
 	if err := c.BodyParser(bodyUser); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(e.BadRequestError)
 	}
@@ -76,7 +77,7 @@ func (uc UserController) Update(c *fiber.Ctx) error {
 
 	bodyUser.SetId(user.GetId())
 
-	response, _ := uc.userService.Update(bodyUser)
+	response := uc.userService.Update(bodyUser)
 	return c.Status(response.Status).JSON(response.Body)
 }
 
@@ -89,6 +90,6 @@ func (uc UserController) Delete(c *fiber.Ctx) error {
 			JSON(e.UnauthorizedError)
 	}
 
-	response, _ := uc.userService.Delete(user)
+	response := uc.userService.Delete(user)
 	return c.Status(response.Status).JSON(response.Body)
 }
