@@ -10,12 +10,11 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 
-	as "github.com/duartqx/gochatws/core/auth/service"
-	ac "github.com/duartqx/gochatws/domains/controllers/auth"
-
 	"github.com/duartqx/gochatws/core/sessions"
 
+	as "github.com/duartqx/gochatws/core/auth/service"
 	c "github.com/duartqx/gochatws/domains/controllers"
+	ac "github.com/duartqx/gochatws/domains/controllers/auth"
 	r "github.com/duartqx/gochatws/domains/repositories"
 	s "github.com/duartqx/gochatws/domains/services"
 )
@@ -72,6 +71,7 @@ func setApp(db *sqlx.DB) *fiber.App {
 		Put("/", userController.Update).
 		Delete("/", userController.Delete)
 
+	// Chat endpoints
 	app.Group("/chat").
 		// Middleware
 		Use(authController.AuthMiddleware).
