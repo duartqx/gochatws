@@ -37,17 +37,21 @@ func setApp(db *sqlx.DB) *fiber.App {
 	// Repositories
 	userRepository := r.NewUserRepository(db)
 	chatRoomRepository := r.NewChatRoomRepository(db, userRepository)
+	messageRepository := r.NewMessageRepository(
+		db, userRepository, chatRoomRepository,
+	)
 
 	// Services
 	jwtAuthService := as.NewJwtAuthService(userRepository, &secret, sessionStore)
 	userService := s.NewUserService(userRepository, v)
 	chatRoomService := s.NewChatRoomService(chatRoomRepository)
+	messageService := s.NewMessageService(messageRepository)
 
 	// Controllers
 	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
 	chatRoomController := c.NewChatRoomController(chatRoomService)
-	wsController := c.NewWebSocketController(chatRoomRepository)
+	msgController := c.NewMessageController(chatRoomRepository, messageService)
 
 	// Logger middleware
 	app.Use(
@@ -95,6 +99,10 @@ func setApp(db *sqlx.DB) *fiber.App {
 		// Endpoints
 		Get("/", chatRoomController.All).
 		Post("/", chatRoomController.Create).
+		// Chat id param
+		Group("/:chat_id<int>").
+		Get("/msg", msgController.GetChatMessages).
+		Post("/msg", msgController.CreateMessage).
 		Use("/ws", func(c *fiber.Ctx) error {
 			// IsWebSocketUpgrade returns true if the client
 			// requested upgrade to the WebSocket protocol.
@@ -104,7 +112,7 @@ func setApp(db *sqlx.DB) *fiber.App {
 			}
 			return fiber.ErrUpgradeRequired
 		}).
-		Get("/ws/:id<int>", wsController.Chat())
+		Get("/ws/connect", msgController.WebSocketChat())
 
 	// HTML Template endpoints
 	app.
