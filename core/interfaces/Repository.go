@@ -16,3 +16,11 @@ type UserRepository interface {
 	FindById(id int) (User, error)
 	FindByUsername(username string) (User, error)
 }
+
+type MessageRepository interface {
+	FindById(id int) (Message, error)
+	FindByParamId(id string) (Message, error)
+	FindByChatId(id int) ([]Message, error)
+	FindByChatParamId(id string) ([]Message, error)
+	Create(m Message) error
+}
