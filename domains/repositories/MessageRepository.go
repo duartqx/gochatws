@@ -3,7 +3,6 @@ package repositories
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -21,7 +20,8 @@ const baseMessageJoinQuery string = `
 		-- Chat
 		c.id,
 		c.name,
-		c.category
+		c.creator_id,
+		c.category,
 
 		-- User
 		u.id,
@@ -30,7 +30,7 @@ const baseMessageJoinQuery string = `
 	FROM Message AS m
 
 	-- Chat informations
-	INNER JOIN Chat AS c
+	INNER JOIN ChatRoom AS c
 	ON m.chat_id = c.id
 
 	-- User informations
@@ -85,6 +85,7 @@ func (mr MessageRepository) FindById(id int) (i.Message, error) {
 		// Chat info
 		&chat.Id,
 		&chat.Name,
+		&chat.CreatorId,
 		&chat.Category,
 		// User info
 		&user.Id,
@@ -111,9 +112,9 @@ func (mr MessageRepository) FindByChatId(id int) ([]i.Message, error) {
 
 	messages := []i.Message{}
 
-	rows, err := mr.db.Query(
-		baseMessageJoinQuery+" WHERE c.id = $1 "+messageOrder, id,
-	)
+	query := baseMessageJoinQuery + " WHERE c.id = $1 " + messageOrder
+
+	rows, err := mr.db.Query(query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +132,7 @@ func (mr MessageRepository) FindByChatId(id int) ([]i.Message, error) {
 			// Chat info
 			&chat.Id,
 			&chat.Name,
+			&chat.CreatorId,
 			&chat.Category,
 			// User info
 			&user.Id,
@@ -173,6 +175,8 @@ func (mr MessageRepository) Create(m i.Message) error {
 		return fmt.Errorf("Could not find chat with id of %d\n", m.GetChatId())
 	}
 
+	m.SetCreatedAt()
+
 	result, err := mr.db.Exec(`
 			INSERT INTO Message (chat_id, user_id, text, created_at)
 			VALUES ($1, $2, $3, $4)
@@ -180,7 +184,7 @@ func (mr MessageRepository) Create(m i.Message) error {
 		m.GetChatId(),
 		m.GetUserId(),
 		m.GetText(),
-		time.Now(),
+		m.GetCreatedAt(),
 	)
 	if err != nil {
 		return err
