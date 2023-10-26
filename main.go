@@ -4,9 +4,10 @@ import (
 	"log"
 
 	"github.com/go-playground/validator/v10"
-	// "github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/template/html/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 
@@ -21,7 +22,12 @@ import (
 
 func setApp(db *sqlx.DB) *fiber.App {
 
-	app := fiber.New()
+	app := fiber.New(
+		fiber.Config{
+			Views:       html.New("./domains/views", ".html"),
+			ViewsLayout: "base",
+		},
+	)
 
 	// Raw dependencies
 	secret := []byte("secret")
@@ -49,22 +55,32 @@ func setApp(db *sqlx.DB) *fiber.App {
 		),
 	)
 
+	// Static files (js, css, images)
+	app.Static("/", "./domains/static")
+
+	// Groups with prefix /api
+	apiGroup := app.Group("/api")
+
 	// Auth endpoints
-	app.
+	apiGroup.
 		Post(
 			"/register",
-			authController.AuthNotLoggedMiddleware,
+			authController.AuthNotLoggedMiddleware(),
 			userController.Create).
 		Post(
 			"/login",
-			authController.AuthNotLoggedMiddleware,
+			authController.AuthNotLoggedMiddleware(),
 			authController.Login).
-		Delete("/logout", authController.AuthMiddleware, authController.Logout)
+		Delete(
+			"/logout",
+			authController.AuthMiddleware(),
+			authController.Logout,
+		)
 
 	// Users endpoints
-	app.Group("/user").
+	apiGroup.Group("/user").
 		// Middleware
-		Use(authController.AuthMiddleware).
+		Use(authController.AuthMiddleware()).
 		// Endpoints
 		Get("/list", userController.All).
 		Get("/", userController.Get).
@@ -72,13 +88,60 @@ func setApp(db *sqlx.DB) *fiber.App {
 		Delete("/", userController.Delete)
 
 	// Chat endpoints
-	app.Group("/chat").
+	apiGroup.Group("/chat").
 		// Middleware
-		Use(authController.AuthMiddleware).
+		Use(authController.AuthMiddleware()).
 		// Endpoints
 		Get("/", chatRoomController.All).
 		Post("/", chatRoomController.Create).
-		Get("/:id<int>", chatRoomController.One)
+		Use("/ws", func(c *fiber.Ctx) error {
+			// IsWebSocketUpgrade returns true if the client
+			// requested upgrade to the WebSocket protocol.
+			if websocket.IsWebSocketUpgrade(c) {
+				c.Locals("allowed", true)
+				return c.Next()
+			}
+			return fiber.ErrUpgradeRequired
+		}).
+		Get("/ws/:id<int>", websocket.New(func(c *websocket.Conn) {
+			// c.Locals is added to the *websocket.Conn
+			log.Println(c.Locals("allowed", true))
+			log.Println(c.Locals("user"))
+
+			var (
+				mt  int
+				msg []byte
+				err error
+			)
+			for {
+				if mt, msg, err = c.ReadMessage(); err != nil {
+					log.Println("read:", err)
+					break
+				}
+				log.Printf("recv: %s", msg)
+
+				if err = c.WriteMessage(mt, []byte("Received: "+string(msg))); err != nil {
+					log.Println("write:", err)
+					break
+				}
+			}
+
+		}))
+
+	// HTML Template endpoints
+	app.
+		Get(
+			"/",
+			authController.AuthMiddlewareWithRedirect(),
+			func(c *fiber.Ctx) error {
+				return c.Render("index", fiber.Map{"Title": "Index"})
+			}).
+		Get(
+			"/login",
+			authController.AuthNotLoggedMiddlewareWithRedirect(),
+			func(c *fiber.Ctx) error {
+				return c.Render("login", fiber.Map{"Title": "Login"})
+			})
 
 	return app
 }
