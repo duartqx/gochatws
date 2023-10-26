@@ -58,6 +58,19 @@ func (ur UserRepository) ExistsByUsername(username string) bool {
 	return false
 }
 
+func (ur UserRepository) ExistsById(id int) bool {
+	var exists int
+	_ = ur.db.Get(
+		&exists,
+		"SELECT EXISTS(SELECT 1 FROM User WHERE id = $1)",
+		id,
+	)
+	if exists > 0 {
+		return true
+	}
+	return false
+}
+
 func (ur UserRepository) All() (*[]i.User, error) {
 	users := []i.User{}
 	rows, err := ur.db.Query("SELECT id, name, username FROM User")
