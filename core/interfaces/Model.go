@@ -1,5 +1,7 @@
 package interfaces
 
+import "time"
+
 type ParserFunc func(out interface{}) error
 
 type ChatRoom interface {
@@ -15,9 +17,13 @@ type ChatRoom interface {
 
 type Message interface {
 	GetId() int
-	SetId(int) Message
 	GetChatId() int
 	GetUserId() int
+	GetCreatedAt() *time.Time
+	SetId(int) Message
+	SetChatId(id int) Message
+	SetUserId(id int) Message
+	SetCreatedAt() Message
 	GetText() string
 	GetUser() User
 	GetChat() ChatRoom
