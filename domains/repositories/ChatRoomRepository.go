@@ -10,7 +10,7 @@ import (
 	m "github.com/duartqx/gochatws/domains/models"
 )
 
-const baseJoinQuery string = `
+const baseChatJoinQuery string = `
 	SELECT c.id, c.creator_id, c.name, c.category, u.id, u.username, u.name
 	FROM ChatRoom AS c
 	INNER JOIN User AS u
@@ -37,7 +37,7 @@ func (crr ChatRoomRepository) FindById(id int) (i.ChatRoom, error) {
 
 	chatRoom := crr.GetModel()
 
-	row := crr.db.QueryRow(baseJoinQuery+"WHERE c.id = $1 LIMIT 1", id)
+	row := crr.db.QueryRow(baseChatJoinQuery+"WHERE c.id = $1 LIMIT 1", id)
 	if err := row.Scan(
 		&chatRoom.Id,
 		&chatRoom.CreatorId,
@@ -62,7 +62,7 @@ func (crr ChatRoomRepository) FindByParamId(id string) (i.ChatRoom, error) {
 
 func (crr ChatRoomRepository) All() (*[]i.ChatRoom, error) {
 	chatRooms := []i.ChatRoom{}
-	rows, err := crr.db.Query(baseJoinQuery)
+	rows, err := crr.db.Query(baseChatJoinQuery)
 	if err != nil {
 		return nil, err
 	}
