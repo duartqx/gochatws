@@ -1,6 +1,6 @@
 {{define "login"}}
-<script src="/js/login.js"></script>
-<div class="container">
+<div id="login">
+  <script src="/js/alpine/login.js"></script>
   <main>
     <div class="py-5 text-center"></div>
     <div class="row g-5">
@@ -36,7 +36,10 @@
             <div class="mt-3">
               <button type="submit" class="btn btn-success">Login</button>
             </div>
-            <div id="loginAlert" class="my-4 text-center alert alert-danger collapse"></div>
+            <div
+              id="loginAlert"
+              class="my-4 text-center alert alert-danger collapse"
+            ></div>
           </div>
         </div>
       </form>
