@@ -1,3 +1,31 @@
 {{define "index"}}
-<h1>Index - You are logged in</h1>
+<div id="index">
+  <div
+    x-data="{
+      // AlpineJS x-data (Adding this block to an external js file or
+      // even in a separate script tag would cause race conditions errors )
+      isLoading: false,
+      chats: [],
+      async get() {
+        this.isLoading = true;
+        await fetch('/api/chat/')
+        .then((res) => res.json())
+        .then((res) => { this.isLoading = false; this.chats = res; });
+      }
+    }"
+    x-init="
+      // After AlpineJS starts it executes this method that fetches all chats
+      // and places them in the DOM with the x-for
+      await get()
+    "
+  >
+    <div class="row g-5">
+      <ul>
+        <template x-for="chat in chats">
+          <li x-text="chat.name"></li>
+        </template>
+      </ul>
+    </div>
+  </div>
+</div>
 {{end}}
