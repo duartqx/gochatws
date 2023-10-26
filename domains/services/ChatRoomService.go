@@ -1,12 +1,21 @@
 package services
 
 import (
+	"fmt"
 	"net/http"
 
 	e "github.com/duartqx/gochatws/core/errors"
 	h "github.com/duartqx/gochatws/core/http"
 	i "github.com/duartqx/gochatws/core/interfaces"
 )
+
+type ChatApiResponse struct {
+	Category int    `json:"category"`
+	Creator  i.User `json:"creator"`
+	Href     string `json:"href"`
+	Id       int    `json:"id"`
+	Name     string `json:"name"`
+}
 
 type ChatRoomService struct {
 	chatRoomRepository i.ChatRepository
@@ -26,7 +35,18 @@ func (crs ChatRoomService) All() *h.HttpResponse {
 			Body:   e.InternalError,
 		}
 	}
-	return &h.HttpResponse{Status: http.StatusOK, Body: chatRooms}
+	results := []ChatApiResponse{}
+	for _, chat := range *chatRooms {
+		result := ChatApiResponse{
+			Category: chat.GetCategory(),
+			Creator:  chat.GetCreator(),
+			Href:     fmt.Sprintf("/chat/%d", chat.GetId()),
+			Id:       chat.GetId(),
+			Name:     chat.GetName(),
+		}
+		results = append(results, result)
+	}
+	return &h.HttpResponse{Status: http.StatusOK, Body: &results}
 }
 
 func (crs ChatRoomService) One(paramId string) *h.HttpResponse {

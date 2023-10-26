@@ -22,7 +22,7 @@
     <div class="row g-5">
       <ul>
         <template x-for="chat in chats">
-          <li x-text="chat.name"></li>
+          <li><a x-bind:href="chat.href" x-text="chat.name"></a></li>
         </template>
       </ul>
     </div>
