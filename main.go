@@ -47,6 +47,7 @@ func setApp(db *sqlx.DB) *fiber.App {
 	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
 	chatRoomController := c.NewChatRoomController(chatRoomService)
+	wsController := c.NewWebSocketController(chatRoomRepository)
 
 	// Logger middleware
 	app.Use(
@@ -103,30 +104,7 @@ func setApp(db *sqlx.DB) *fiber.App {
 			}
 			return fiber.ErrUpgradeRequired
 		}).
-		Get("/ws/:id<int>", websocket.New(func(c *websocket.Conn) {
-			// c.Locals is added to the *websocket.Conn
-			log.Println(c.Locals("allowed", true))
-			log.Println(c.Locals("user"))
-
-			var (
-				mt  int
-				msg []byte
-				err error
-			)
-			for {
-				if mt, msg, err = c.ReadMessage(); err != nil {
-					log.Println("read:", err)
-					break
-				}
-				log.Printf("recv: %s", msg)
-
-				if err = c.WriteMessage(mt, []byte("Received: "+string(msg))); err != nil {
-					log.Println("write:", err)
-					break
-				}
-			}
-
-		}))
+		Get("/ws/:id<int>", wsController.Chat())
 
 	// HTML Template endpoints
 	app.
