@@ -20,32 +20,62 @@ func NewJwtAuthController(jwtAuthService *as.JwtAuthService) *JwtAuthController 
 	}
 }
 
-// public
-func (jc JwtAuthController) AuthNotLoggedMiddleware(c *fiber.Ctx) error {
-	claimsUser, _ := jc.jwtAuthService.ValidateAuth(
-		c.Get("Authorization"),
-		c.Cookies("jwt"),
-	)
-	if claimsUser != nil {
-		return c.Status(http.StatusUnauthorized).JSON(e.LoggedInError)
+// private
+func (jc JwtAuthController) authNotLoggedMiddleware(redirect bool) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		claimsUser, _ := jc.jwtAuthService.ValidateAuth(
+			c.Get("Authorization"),
+			c.Cookies("jwt"),
+		)
+		if claimsUser != nil {
+			if redirect {
+				return c.Redirect("/")
+			}
+			return c.Status(http.StatusUnauthorized).JSON(e.LoggedInError)
+		}
+		return c.Next()
 	}
-	return c.Next()
 }
 
 // public
-func (jc JwtAuthController) AuthMiddleware(c *fiber.Ctx) error {
+func (jc JwtAuthController) AuthNotLoggedMiddleware() func(c *fiber.Ctx) error {
+	return jc.authNotLoggedMiddleware(false)
+}
 
-	claimsUser, err := jc.jwtAuthService.ValidateAuth(
-		c.Get("Authorization"),
-		c.Cookies("jwt"),
-	)
-	if err != nil {
-		return c.Status(http.StatusUnauthorized).JSON(e.InvalidTokenError)
+// public
+func (jc JwtAuthController) AuthNotLoggedMiddlewareWithRedirect() func(c *fiber.Ctx) error {
+	return jc.authNotLoggedMiddleware(true)
+}
+
+// private
+func (jc JwtAuthController) authMiddleware(redirect bool) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+
+		claimsUser, err := jc.jwtAuthService.ValidateAuth(
+			c.Get("Authorization"),
+			c.Cookies("jwt"),
+		)
+		if err != nil {
+			if redirect {
+				return c.Redirect("/login")
+			}
+			return c.Status(http.StatusUnauthorized).JSON(e.InvalidTokenError)
+		}
+
+		c.Locals("user", claimsUser)
+
+		return c.Next()
 	}
+}
 
-	c.Locals("user", claimsUser)
+// public
+func (jc JwtAuthController) AuthMiddleware() func(c *fiber.Ctx) error {
+	return jc.authMiddleware(false)
+}
 
-	return c.Next()
+// public
+func (jc JwtAuthController) AuthMiddlewareWithRedirect() func(c *fiber.Ctx) error {
+	return jc.authMiddleware(true)
 }
 
 // public
