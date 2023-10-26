@@ -3,7 +3,7 @@
  * endpoint with the provided username and password.
  * If the login is successful, it redirects the user to the home page ("/").
  * If there is an error, it displays an error message using the `loginAlert` function.
- * 
+ *
  * @param {Event} e - The event object.
  * @returns {boolean} Returns false if the username or password is missing.
  *
@@ -24,6 +24,7 @@ function login(e) {
     .then((res) => {
       if (!res.ok) return res.json();
       htmx.ajax("GET", "/", { target: "body" });
+      window.history.pushState({}, "", "/");
     })
     .then((res) => {
       if (res && res.error) loginAlert(res.error);
