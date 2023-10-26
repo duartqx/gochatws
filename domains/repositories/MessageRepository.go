@@ -38,6 +38,8 @@ const baseMessageJoinQuery string = `
 	ON m.user_id = u.id
 `
 
+const messageOrder string = "ORDER BY m.created_at DESC"
+
 type MessageRepository struct {
 	db             *sqlx.DB
 	userRepository i.UserRepository
@@ -109,7 +111,9 @@ func (mr MessageRepository) FindByChatId(id int) ([]i.Message, error) {
 
 	messages := []i.Message{}
 
-	rows, err := mr.db.Query(baseMessageJoinQuery+"WHERE c.id = $1", id)
+	rows, err := mr.db.Query(
+		baseMessageJoinQuery+" WHERE c.id = $1 "+messageOrder, id,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +173,7 @@ func (mr MessageRepository) Create(m i.Message) error {
 		return fmt.Errorf("Could not find chat with id of %d\n", m.GetChatId())
 	}
 
-	_, err = mr.db.Exec(`
+	result, err := mr.db.Exec(`
 			INSERT INTO Message (chat_id, user_id, text, created_at)
 			VALUES ($1, $2, $3, $4)
 		`,
@@ -182,13 +186,12 @@ func (mr MessageRepository) Create(m i.Message) error {
 		return err
 	}
 
-	var msgId int
-	err = mr.db.QueryRow("SELECT last_insert_rowid()").Scan(&msgId)
+	msgId, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
 
-	m.SetId(msgId).PopulateChat(chat).PopulateUser(user)
+	m.SetId(int(msgId)).PopulateChat(chat).PopulateUser(user)
 
 	return nil
 }

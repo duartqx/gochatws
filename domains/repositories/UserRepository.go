@@ -102,7 +102,7 @@ func (ur UserRepository) Update(u i.User) error {
 }
 
 func (ur UserRepository) Create(u i.User) error {
-	_, err := ur.db.Exec(
+	result, err := ur.db.Exec(
 		"INSERT INTO User (name, username, password) VALUES ($1, $2, $3)",
 		u.GetName(),
 		u.GetUsername(),
@@ -112,13 +112,12 @@ func (ur UserRepository) Create(u i.User) error {
 		return err
 	}
 
-	var id int
-	err = ur.db.QueryRow("SELECT last_insert_rowid()").Scan(&id)
+	id, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
 
-	u.SetId(id)
+	u.SetId(int(id))
 
 	return nil
 }

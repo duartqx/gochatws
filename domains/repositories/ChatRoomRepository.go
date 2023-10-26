@@ -102,21 +102,22 @@ func (crr ChatRoomRepository) Create(cr i.ChatRoom) error {
 		return err
 	}
 
-	_, err = crr.db.Exec(`
-		INSERT INTO ChatRoom (creator_id, name, category)
-		VALUES ($1, $2, $3)
-	`, cr.GetCreatorId(), cr.GetName(), cr.GetCategory())
+	result, err := crr.db.Exec(
+		"INSERT INTO ChatRoom (creator_id, name, category) VALUES ($1, $2, $3)",
+		cr.GetCreatorId(),
+		cr.GetName(),
+		cr.GetCategory(),
+	)
 	if err != nil {
 		return err
 	}
 
-	var chatId int
-	err = crr.db.QueryRow("SELECT last_insert_rowid()").Scan(&chatId)
+	chatId, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
-	cr.SetId(chatId)
 
+	cr.SetId(int(chatId))
 	cr.PopulateCreator(creator)
 
 	return nil

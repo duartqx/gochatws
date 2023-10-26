@@ -9,8 +9,8 @@
       async get() {
         this.isLoading = true;
         await fetch('/api/chat/')
-        .then((res) => res.json())
-        .then((res) => { this.isLoading = false; this.chats = res; });
+          .then((res) => res.json())
+          .then((res) => { this.isLoading = false; this.chats = res; });
       }
     }"
     x-init="
