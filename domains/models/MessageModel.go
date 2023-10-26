@@ -12,8 +12,8 @@ type MessageModel struct {
 	Text      string    `db:"text" json:"text"`
 
 	// ForeignKeys
-	ChatId int `db:"chat_id"`
-	UserId int `db:"user_id"`
+	chatId int `db:"chat_id"`
+	userId int `db:"user_id"`
 
 	// Structs not part of the db
 	C i.ChatRoom `json:"chat"`
@@ -30,11 +30,30 @@ func (mm *MessageModel) SetId(id int) i.Message {
 }
 
 func (mm MessageModel) GetChatId() int {
-	return mm.ChatId
+	return mm.chatId
 }
 
 func (mm MessageModel) GetUserId() int {
-	return mm.UserId
+	return mm.userId
+}
+
+func (mm MessageModel) GetCreatedAt() *time.Time {
+	return &mm.CreatedAt
+}
+
+func (mm *MessageModel) SetUserId(id int) i.Message {
+	mm.userId = id
+	return mm
+}
+
+func (mm *MessageModel) SetChatId(id int) i.Message {
+	mm.chatId = id
+	return mm
+}
+
+func (mm *MessageModel) SetCreatedAt() i.Message {
+	mm.CreatedAt = time.Now()
+	return mm
 }
 
 func (mm MessageModel) GetText() string {
@@ -60,9 +79,10 @@ func (mm *MessageModel) PopulateUser(user i.User) i.Message {
 
 func (mm *MessageModel) PopulateChat(chat i.ChatRoom) i.Message {
 	mm.C = &ChatRoomModel{
-		Id:       chat.GetId(),
-		Category: chat.GetCategory(),
-		Name:     chat.GetName(),
+		Id:        chat.GetId(),
+		Category:  chat.GetCategory(),
+		CreatorId: chat.GetCreatorId(),
+		Name:      chat.GetName(),
 	}
 	return mm
 }
