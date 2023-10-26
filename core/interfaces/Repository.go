@@ -12,6 +12,7 @@ type UserRepository interface {
 	Create(user User) error
 	Delete(user User) error
 	ExistsByUsername(username string) bool
+	ExistsById(id int) bool
 	FindById(id int) (User, error)
 	FindByUsername(username string) (User, error)
 }
