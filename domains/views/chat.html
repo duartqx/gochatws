@@ -30,10 +30,10 @@
         "
         x-transition
       >
-        <ul class="list-unstyled">
+        <ul class="list-unstyled d-flex flex-column justify-content-end" style="height:98%">
           <template x-for="msg in messages">
             <div
-              class="card my-2 w-50"
+              class="card mt-2 w-50"
               :class="msg.user.id == {{.User.GetId}} && 'bg-body-secondary ms-auto'"
             >
               <li class="card-body d-flex align-items-center">
