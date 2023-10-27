@@ -1,11 +1,10 @@
 {{define "chat"}}
 <div id="content">
   <div class="card shadow-sm bg-body-tertiary border-dark rounded">
-    <div class="bd-placeholder-img card-img-top" role="img"></div>
     <div class="card-body">
       <div
         id="chat-messages"
-        class="card-text px-4"
+        class="card-text px-4 mb-3"
         style="height: 70vh; overflow-y: scroll;"
         x-data="{
           isLoading: false,
@@ -56,7 +55,7 @@
           </template>
         </ul>
       </div>
-      <div class="col-xs-12">
+      <div class="col-xs-12 mt-3">
         <form>
           <div class="input-group w-100">
             <span class="input-group-text" role="button">></span>
