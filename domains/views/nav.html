@@ -1,0 +1,62 @@
+{{define "nav"}}
+<script src="/js/utils/domparser.js"></script>
+<nav
+  class="navbar navbar-expand-lg bg-body-tertiary rounded"
+  aria-label="GoChatWs navbar"
+>
+  <div class="container-fluid">
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#gochaws-nav"
+      aria-controls="gochaws-nav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="gochaws-nav">
+      <ul class="navbar-nav d-flex col-md-12">
+        <div class="row w-100">
+          <li class="nav-item col-md-3">
+            <a
+              class="nav-link active"
+              role="button"
+              hx-get="/"
+              hx-target="body"
+              hx-push-url="true"
+            >GoChatWs</a
+            >
+          </li>
+          {{if .User}}
+          <li class="nav-item dropdown col-md-3 ms-auto">
+            <a
+              class="nav-link dropdown-toggle px-4"
+              href="#"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >{{.User.GetName}}</a
+            >
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Edit</a></li>
+              <li>
+                <a
+                  class="dropdown-item"
+                  hx-delete="/api/logout"
+                  hx-swap="none"
+                  hx-on::after-request="htmx.ajax('GET', '/', { target: 'body' })"
+                  role="button"
+                >Logout</a
+                >
+              </li>
+            </ul>
+          </li>
+          {{end}}
+        </div>
+      </ul>
+    </div>
+  </div>
+</nav>
+{{end}}
