@@ -7,8 +7,8 @@ type ErrorResponse map[string]string
 var (
 	// map[string]string Errors
 	BadRequestError              = ErrorResponse{"error": "Bad Request"}
-	InternalError                = ErrorResponse{"error": "Internal"}
-	InvalidUsernameError         = ErrorResponse{"error": "Invalid username"}
+	InternalError                = ErrorResponse{"error": "Internal Server Error"}
+	InvalidUsernameError         = ErrorResponse{"error": "Invalid username or password"}
 	InvalidTokenError            = ErrorResponse{"error": "Invalid or missing token"}
 	WrongUsernameOrPasswordError = ErrorResponse{"error": "Wrong username or password"}
 	LoggedInError                = ErrorResponse{"error": "You are logged in"}
