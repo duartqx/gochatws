@@ -38,7 +38,7 @@ const baseMessageJoinQuery string = `
 	ON m.user_id = u.id
 `
 
-const messageOrder string = "ORDER BY m.created_at DESC"
+const messageOrder string = "ORDER BY m.created_at ASC"
 
 type MessageRepository struct {
 	db             *sqlx.DB
