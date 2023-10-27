@@ -82,19 +82,18 @@ func (us UserService) Create(user i.User) *h.HttpResponse {
 
 func (us UserService) Update(bodyUser i.User) *h.HttpResponse {
 
-	if err := us.validator.Struct(bodyUser); err != nil {
-		return &h.HttpResponse{
-			Status: http.StatusBadRequest,
-			Body:   e.ValidationError(e.BuildErrorResponse(err)),
-		}
-	}
-
 	dbUser, err := us.userRepository.FindById(bodyUser.GetId())
 	if err != nil {
 		return &h.HttpResponse{Status: http.StatusNotFound, Body: e.NotFoundError}
 	}
 
 	dbUser.UpdateFromAnother(bodyUser)
+	if err := us.userRepository.Update(dbUser); err != nil {
+		return &h.HttpResponse{
+			Status: http.StatusInternalServerError,
+			Body:   e.InternalError,
+		}
+	}
 	return &h.HttpResponse{Status: http.StatusOK, Body: dbUser.Clean()}
 }
 
