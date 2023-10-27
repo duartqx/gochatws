@@ -45,7 +45,11 @@ func (crc ChatRoomController) Chat(c *fiber.Ctx) error {
 	if !ok {
 		return c.Render("404", fiber.Map{"Title": "404 Not Found"})
 	}
-	return c.Render("chat", fiber.Map{"Title": chat.GetName(), "User": user})
+	return c.Render("chat", fiber.Map{
+		"Title":  chat.GetName(),
+		"ChatId": chat.GetId(),
+		"User":   user,
+	})
 }
 
 func (crc ChatRoomController) Create(c *fiber.Ctx) error {
