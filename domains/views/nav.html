@@ -27,6 +27,7 @@
               hx-get="/"
               hx-target="body"
               hx-push-url="true"
+              hx-swap="transition:true"
             >GoChatWs</a
             >
           </li>
@@ -46,7 +47,9 @@
                   class="dropdown-item"
                   hx-delete="/api/logout"
                   hx-swap="none"
-                  hx-on::after-request="htmx.ajax('GET', '/', { target: 'body' })"
+                  hx-on::after-request="
+                    htmx.ajax('GET', '/', { target: 'body', swap: 'transition:true' })
+                  "
                   role="button"
                 >Logout</a
                 >
