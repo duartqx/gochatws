@@ -1,5 +1,79 @@
 {{define "chat"}}
 <div id="content">
-  <div>Chat</div>
+  <div class="card shadow-sm bg-body-tertiary border-dark rounded">
+    <div class="bd-placeholder-img card-img-top" role="img"></div>
+    <div class="card-body">
+      <div
+        id="chat-messages"
+        class="card-text px-4"
+        style="height: 70vh; overflow-y: scroll;"
+        x-data="{
+          isLoading: false,
+          messages: [],
+          async get() {
+            this.isLoading = true;
+            fetch('/api/chat/{{.ChatId}}/msg')
+              .then(res => res.json())
+              .then(res => { this.messages = res; this.isLoading = false; })
+          },
+          scrollToBottom(elem) {
+            return () => { elem.scrollTop = elem.scrollHeight }
+          },
+          observeDOMChanges() {
+            let elem = htmx.find('#chat-messages');
+            let observer = new MutationObserver(this.scrollToBottom(elem));
+            observer.observe(elem, { childList: true, subtree: true });
+          }
+        }"
+        x-init="
+          // Fetches the messages for this page
+          await get(); observeDOMChanges();
+        "
+        x-transition
+      >
+        <ul class="list-unstyled">
+          <template x-for="msg in messages">
+            <div
+              class="card my-2 w-50"
+              :class="msg.user.id == {{.User.GetId}} && 'bg-body-secondary ms-auto'"
+            >
+              <li class="card-body d-flex align-items-center">
+                <div class="col-xs-2">
+                  <div
+                    class="rounded-circle"
+                    alt="Avatar"
+                    style="width: 40px; height: 40px; background-color: pink"
+                    x-bind:title="msg.user.name"
+                  ></div>
+                </div>
+                <div
+                  x-text="msg.text"
+                  x-bind:title="new Date(msg.created_at)"
+                  class="mx-4 col-xs-10"
+                ></div>
+              </li>
+            </div>
+          </template>
+        </ul>
+      </div>
+      <div class="col-xs-12">
+        <form>
+          <div class="input-group w-100">
+            <span class="input-group-text" role="button">></span>
+            <div class="form-floating">
+              <input
+                type="text"
+                class="form-control text-body-secondary"
+                id="message"
+                placeholder="Type"
+                name="message"
+              />
+              <label for="message">Type</label>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 {{end}}
