@@ -1,60 +1,99 @@
 {{define "login"}}
 <div id="content">
-  <script src="/js/alpine/login.js"></script>
-  <main>
-    <div class="py-5 text-center"></div>
-    <div class="row g-5">
-      <form
-        id="login"
-        x-data="{login: login}"
-        @submit.prevent="login"
-      >
-        <div class="row">
-          <div class="col-lg-4 col-md-6 col-sm-8">
-            <div class="mt-2">
-              <label for="username" class="form-label">Email</label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                placeholder="your@email.com"
-                class="form-control"
-              />
-            </div>
-            <div class="mt-2">
-              <label for="password" class="form-label">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                placeholder="**********"
-                class="form-control"
-              />
-            </div>
-            <div class="mt-3 d-flex col-md-12">
-              <button type="submit" class="col-md-5 btn btn-primary">
-                Login
-              </button>
-              <button
-                type="button"
-                class="col-md-5 btn btn-outline-primary ms-auto"
-                hx-get="/register"
-                hx-target="main#main"
-                hx-swap="innerHTML"
-                hx-select="#content"
-                hx-push-url="true"
-              >
-                Create Account
-              </button>
-            </div>
-            <div
-              id="loginAlert"
-              class="my-4 text-center alert alert-danger collapse"
-            ></div>
+  <div class="py-5 text-center"></div>
+  <div class="row g-5">
+    <form
+      id="login"
+      x-data="{
+        /*
+         * Logs in the user by sending a POST request to the '/api/login'
+         * endpoint with the provided username and password.
+         * If the login is successful, it redirects the user to the home page ('/').
+         * If there is an error, it displays an error message using the `loginAlert` function.
+         *
+         * @param {Event} e - The event object.
+         * @returns {boolean} Returns false if the username or password is missing.
+         *
+         */
+        login(e) {
+          let values = htmx.values(e.target);
+          if (!values.username || !values.password) {
+            return false;
+          }
+
+          fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(values),
+          })
+            .then((res) => {
+              if (!res.ok) return res.json();
+              htmx.ajax('GET', '/', { target: 'body', swap: 'transition:true' });
+              window.history.pushState({}, '', '/');
+            })
+            .then((res) => {
+              if (res && res.error) this.loginAlert(res.error);
+            });
+        },
+        /**
+         * Displays an alert message with the provided message.
+         * @param {string} msg - The message to display in the alert.
+         */
+        loginAlert(msg) {
+          let alertEl = htmx.find('#loginAlert');
+          alertEl.innerText = msg;
+          htmx.removeClass(alertEl, 'collapse');
+        }
+      }"
+      @submit.prevent="login"
+    >
+      <div class="row">
+        <div class="col-lg-4 col-md-6 col-sm-8">
+          <div class="mt-2">
+            <label for="username" class="form-label">Email</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="your@email.com"
+              class="form-control"
+            />
           </div>
+          <div class="mt-2">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="**********"
+              class="form-control"
+            />
+          </div>
+          <div class="mt-3 d-flex col-md-12">
+            <button type="submit" class="col-md-5 btn btn-primary">
+              Login
+            </button>
+            <button
+              type="button"
+              class="col-md-5 btn btn-outline-primary ms-auto"
+              hx-get="/register"
+              hx-target="main#main"
+              hx-swap="innerHTML transition:true"
+              hx-select="#content"
+              hx-push-url="true"
+            >
+              Create Account
+            </button>
+          </div>
+          <div
+            id="loginAlert"
+            class="my-4 text-center alert alert-danger collapse"
+          ></div>
         </div>
-      </form>
-    </div>
-  </main>
+      </div>
+    </form>
+  </div>
 </div>
 {{end}}
