@@ -11,6 +11,7 @@ type UserRepository interface {
 	All() (*[]User, error)
 	Create(user User) error
 	Delete(user User) error
+	Update(user User) error
 	ExistsByUsername(username string) bool
 	ExistsById(id int) bool
 	FindById(id int) (User, error)
