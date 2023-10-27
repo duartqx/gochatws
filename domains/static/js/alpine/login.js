@@ -23,7 +23,7 @@ function login(e) {
   })
     .then((res) => {
       if (!res.ok) return res.json();
-      htmx.ajax("GET", "/", { target: "body" });
+      htmx.ajax("GET", "/", { target: "body", swap: "transition:true" });
       window.history.pushState({}, "", "/");
     })
     .then((res) => {

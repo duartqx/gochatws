@@ -29,7 +29,7 @@ function register(e) {
   })
     .then((res) => {
       if (!res.ok) return res.json();
-      htmx.ajax("GET", "/login", { target: "body" });
+      htmx.ajax("GET", "/login", { target: "body", swap: "transition:true" });
       window.history.pushState({}, "", "/login");
     })
     .then((res) => {
