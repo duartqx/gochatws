@@ -18,6 +18,7 @@ import (
 	ac "github.com/duartqx/gochatws/domains/controllers/auth"
 	r "github.com/duartqx/gochatws/domains/repositories"
 	s "github.com/duartqx/gochatws/domains/services"
+	"github.com/duartqx/gochatws/domains/utils"
 )
 
 func setApp(db *sqlx.DB) *fiber.App {
@@ -116,17 +117,37 @@ func setApp(db *sqlx.DB) *fiber.App {
 
 	// HTML Template endpoints
 	app.
+		// Authenticated endpoints
 		Get(
 			"/",
 			authController.AuthMiddlewareWithRedirect(),
 			func(c *fiber.Ctx) error {
-				return c.Render("index", fiber.Map{"Title": "Index"})
+				user, err := utils.GetUserFromLocals(c.Locals("user"))
+				if err != nil {
+					return c.Render("404", fiber.Map{"Title": "404 Not Found"})
+				}
+				return c.Render("index", fiber.Map{
+					"Title": "Index",
+					"User":  user,
+				})
 			}).
+		Get(
+			"/chat/:id<int>",
+			authController.AuthMiddlewareWithRedirect(),
+			chatRoomController.Chat,
+		).
+		// Unauthenticated endpoints
 		Get(
 			"/login",
 			authController.AuthNotLoggedMiddlewareWithRedirect(),
 			func(c *fiber.Ctx) error {
 				return c.Render("login", fiber.Map{"Title": "Login"})
+			}).
+		Get(
+			"/register",
+			authController.AuthNotLoggedMiddleware(),
+			func(c *fiber.Ctx) error {
+				return c.Render("register", fiber.Map{"Title": "Register"})
 			})
 
 	return app
