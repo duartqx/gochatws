@@ -21,21 +21,26 @@
     x-cloak
     x-transition
   >
-    <div class="row g-5 my-1">
+    <div class="row g-5 my-1 mx-2 text-center">
       <ul class="list-unstyled mt-3 mb-4 row">
         <!-- For loop with alpine -->
         <template x-for="chat in chats">
-          <li class="col-sm-3">
-            <div class="card mb-4 rounded-3 shadow-sm">
-              <div class="card-header py-3">
-                <h4 class="my-0 fw-normal text-center" x-text="chat.name"></h4>
+          <li class="col-lg-3 col-sm-6 col-xs-12">
+            <div class="card mb-4 rounded-3 shadow-sm" style="height: 180px">
+              <div
+                class="card-header py-3 h-50 d-flex align-items-center justify-content-center"
+              >
+                <h4 class="my-0 fw-normal" x-text="chat.name"></h4>
               </div>
-              <div class="card-body">
+              <div
+                class="card-body h-50 d-flex align-items-center justify-content-center"
+              >
                 <button
                   type="button"
-                  class="w-100 btn btn-lg btn-success"
+                  class="w-100 btn btn-lg btn-outline-primary"
                   x-bind:hx-get="chat.href"
-                  hx-target="#index"
+                  hx-target="main#main"
+                  hx-select="#content"
                   hx-push-url="true"
                 >
                   Join Chat
