@@ -7,5 +7,6 @@ GoChatWs is a chat web service project with the backend written in Go. Htmx is o
 
 Websockets and JSON Web Tokens (JWT) are used for secure and real-time communication. Websockets enable real-time, bidirectional communication between the client and server, while JWT provides a secure method for user authentication. This combination of technologies ensures a robust, secure, and interactive service.
 
+## Demo
 
-
+https://github.com/duartqx/gochatws/assets/49421452/755bde57-c2c0-4273-b0a0-f37f9480ff44
