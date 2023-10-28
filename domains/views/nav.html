@@ -101,7 +101,7 @@
     }
   }"
   x-text="msg"
-  @alert-message="show($event.detail.message, $event.detail.class)"
+  @alert-message.window="show($event.detail.message, $event.detail.class)"
 
 ></div>
 {{template "create-chat-modal" .}} {{end}}

@@ -48,8 +48,6 @@ async function fetchTransitionAndDispatches(url, detail) {
  */
 function dispatchAlert(detail) {
   setTimeout(() => {
-    htmx
-      .find("#generic-alert")
-      .dispatchEvent(new CustomEvent("alert-message", detail));
+    window.dispatchEvent(new CustomEvent("alert-message", detail));
   }, 500);
 }

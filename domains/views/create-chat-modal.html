@@ -62,8 +62,9 @@
                 .then((res) => res.json())
                 .then((data) => {
                   $dispatch('chat-created-dispatch', data);
-                  dispatchAlert({
-                    detail: { message: 'Chat created successfully', class: 'alert-success' }
+                  $dispatch('alert-message', {
+                    message: 'Chat created successfully',
+                    class: 'alert-success'
                   })
                 });
             };
