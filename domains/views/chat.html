@@ -18,7 +18,8 @@
            * @async
            * @function get
            * @throws {Error} When unable to fetch the messages.
-           * @return {Promise<void>} No value is returned but the messages array and isLoading flag are updated.
+           * @return {Promise<void>} No value is returned but the messages 
+           * array and isLoading flag are updated.
            */
           async get() {
             this.isLoading = true;
@@ -31,10 +32,12 @@
           },
 
           /**
-           * Observes changes in the DOM and scrolls to the bottom of the element when changes occur.
+           * Observes changes in the DOM and scrolls to the bottom of the
+           * element when changes occur.
            *
            * @function observeDOMChanges
-           * @this {object} The context of the function, which should contain the `scrollToBottom` method.
+           * @this {object} The context of the function, which should contain
+           * the `scrollToBottom` method.
            * @throws {Error} If the element with id 'chat-messages' is not found.
            */
           observeDOMChanges() {
@@ -53,7 +56,8 @@
            * When a message is received, it is appended to the messages array.
            *
            * @function initWebSocket
-           * @this {object} The context of the function, which should contain the `messages` array and the `socket` property.
+           * @this {object} The context of the function, which should contain
+           * the `messages` array and the `socket` property.
            * @throws {Error} If the WebSocket connection cannot be established.
            */
           initWebSocket() {
@@ -65,11 +69,14 @@
           },
 
           /**
-           * Sends a new message through the WebSocket connection if the new message is not empty
-           * and the WebSocket connection is open. After the message is sent, the new message input field is cleared.
+           * Sends a new message through the WebSocket connection if the
+           * new message is not empty
+           * and the WebSocket connection is open. After the message is sent,
+           * the new message input field is cleared.
            *
            * @function sendMessage
-           * @this {object} The context of the function, which should contain the `newMessage` string and the `socket` property.
+           * @this {object} The context of the function, which should contain
+           * the `newMessage` string and the `socket` property.
            * @throws {Error} If the WebSocket connection is not open.
            */
           sendMessage() {
@@ -88,23 +95,27 @@
         "
         x-transition
       >
-        <div id="chat-messages-overflow" style="height: 70vh; overflow-y: scroll">
+        <div
+          id="chat-messages-overflow"
+          style="height: 70vh; overflow-y: scroll"
+        >
           <ul
             id="main-chat-body"
             class="list-unstyled d-flex flex-column justify-content-end"
           >
             <template x-for="(msg, idx) in messages" :key="idx">
               <div
-                class="card mt-2 w-50"
-                :class="msg.user.id == {{.User.GetId}} && 'bg-body-secondary ms-auto'"
+                class="card mt-2"
+                :class="msg.user.id == {{.User.GetId}} ? 'bg-body-secondary ms-auto mx-4' : 'me-auto'"
               >
                 <li class="card-body d-flex align-items-center">
                   <div class="col-xs-2">
                     <div
                       class="rounded-circle"
                       alt="Avatar"
-                      style="width: 40px; height: 40px; background-color: pink"
-                      x-bind:title="msg.user.name"
+                      style="width: 40px; height: 40px;"
+                      :style="msg.user.id == {{.User.GetId}} ? {'background-color' : 'pink'} : {'background-color' : 'lightblue'}"
+                      :title="msg.user.name"
                     ></div>
                   </div>
                   <div
@@ -129,9 +140,8 @@
                   placeholder="Type"
                   name="sendMessage"
                   x-model="newMessage"
-                 autocomplete="off"
                 />
-                <label for="sendMessage">Type</label>
+                <label>Type</label>
               </div>
             </div>
           </form>
