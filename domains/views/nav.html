@@ -1,4 +1,5 @@
 {{define "nav"}}
+<script src="/js/utils/fetches.js"></script>
 <nav
   class="navbar navbar-expand-lg bg-body-tertiary rounded"
   aria-label="GoChatWs navbar"
@@ -57,8 +58,12 @@
                   hx-delete="/api/logout"
                   hx-swap="none"
                   hx-on::after-request="
-                    htmx.ajax('GET', '/', { target: 'body', swap: 'transition:true' })
-                    "
+                    fetchTransitionAndDispatches('/', {
+                      detail: {
+                        message: 'You are logged out', class: 'alert-success'
+                      }
+                    });
+                  "
                   role="button"
                   >Logout</a
                 >
@@ -73,8 +78,30 @@
 </nav>
 <div
   id="generic-alert"
-  class="col-md-12 mx-auto mt-3 alert hidden"
+  class="col-sm-5 alert fade hidden"
   role="alert"
-  style="transition: opacity 0.5s ease-in-out;"
->_</div>
+  style="position: fixed; top: 90vh; right: 2vw; z-index: 999;"
+  x-data="{
+    msg: '',
+    show(msg, cls) {
+      this.msg = msg;
+
+      setTimeout(() => {
+        htmx.toggleClass($el, cls);
+        htmx.toggleClass($el, 'hidden');
+        setTimeout(() => {
+          htmx.toggleClass($el, 'hidden');
+          setTimeout(() => {
+            htmx.toggleClass($el, cls);
+            this.msg = '';
+          }, 500)
+        }, 5000);
+      }, 100);
+
+    }
+  }"
+  x-text="msg"
+  @alert-message="show($event.detail.message, $event.detail.class)"
+
+></div>
 {{template "create-chat-modal" .}} {{end}}

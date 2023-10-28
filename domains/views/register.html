@@ -33,23 +33,24 @@
             },
             body: JSON.stringify(values),
           })
-            .then((res) => {
+            .then(async (res) => {
               if (!res.ok) return res.json();
-              htmx.ajax('GET', '/login', { target: 'body', swap: 'transition:true' });
-              window.history.pushState({}, '', '/login');
+
+              // Fetches, replaces the dom and dispatches alpine event
+              await fetchTransitionAndDispatches('/login', {
+                detail: {
+                  message: 'Successfully registered your account',
+                  class: 'alert-success'
+                }
+              })
             })
             .then((res) => {
-              if (res && res.error) this.registerAlert(res.error);
+              if (res && res.error) {
+                dispatchAlert({
+                  detail: { message: res.error, class: 'alert-danger' }
+                })
+              };
             });
-        },
-        /**
-         * Displays an alert message with the provided message.
-         * @param {string} msg - The message to display in the alert.
-         */
-        registerAlert(msg) {
-          let alertEl = htmx.find('#registerAlert');
-          alertEl.innerText = msg;
-          htmx.removeClass(alertEl, 'collapse');
         }
       }"
       @submit.prevent="register"
@@ -108,10 +109,6 @@
               Login
             </button>
           </div>
-          <div
-            id="registerAlert"
-            class="my-4 text-center alert alert-danger collapse"
-          ></div>
         </div>
       </div>
     </form>

@@ -1,5 +1,4 @@
 {{define "create-chat-modal"}}
-<script src="/js/utils/alert.js"></script>
 <div class="modal fade" tabindex="-1" id="create-chat-modal">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -63,7 +62,9 @@
                 .then((res) => res.json())
                 .then((data) => {
                   $dispatch('chat-created-dispatch', data);
-                  alertWithMessage('Chat created successfully', 'alert-success');
+                  dispatchAlert({
+                    detail: { message: 'Chat created successfully', class: 'alert-success' }
+                  })
                 });
             };
           "
