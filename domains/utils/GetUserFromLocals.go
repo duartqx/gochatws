@@ -6,6 +6,7 @@ import (
 
 	i "github.com/duartqx/gochatws/core/interfaces"
 	m "github.com/duartqx/gochatws/domains/models"
+	"github.com/gofiber/fiber/v2"
 )
 
 func GetUserFromLocals(localUser interface{}) (i.User, error) {
@@ -23,4 +24,12 @@ func GetUserFromLocals(localUser interface{}) (i.User, error) {
 		return nil, err
 	}
 	return userStruct, nil
+}
+
+func BuildTemplateContext(c *fiber.Ctx, m *fiber.Map) *fiber.Map {
+	user, _ := GetUserFromLocals(c.Locals("user"))
+
+	(*m)["User"] = user
+
+	return m
 }
