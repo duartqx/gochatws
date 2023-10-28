@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,11 +33,7 @@ func (crc ChatRoomController) One(c *fiber.Ctx) error {
 	return c.Status(response.Status).JSON(response.Body)
 }
 
-func (crc ChatRoomController) Chat(c *fiber.Ctx) error {
-	user, err := utils.GetUserFromLocals(c.Locals("user"))
-	if err != nil {
-		return c.Render("404", fiber.Map{"Title": "404 Not Found"})
-	}
+func (crc ChatRoomController) ChatView(c *fiber.Ctx) error {
 	response := crc.chatRoomService.One(c.Params("id"))
 	if response.Status != http.StatusOK {
 		return c.Render("404", fiber.Map{"Title": "404 Not Found"})
@@ -45,12 +42,14 @@ func (crc ChatRoomController) Chat(c *fiber.Ctx) error {
 	if !ok {
 		return c.Render("404", fiber.Map{"Title": "404 Not Found"})
 	}
-	return c.Render("chat", fiber.Map{
-		"Title":  chat.GetName(),
-		"ChatId": chat.GetId(),
-		"User":   user,
-		"Host":   "127.0.0.1:8000/",
-	})
+	return c.Render(
+		"chat",
+		utils.BuildTemplateContext(c, &fiber.Map{
+			"Title":  chat.GetName(),
+			"ChatId": chat.GetId(),
+			"Host":   "127.0.0.1:8000/",
+		}),
+	)
 }
 
 func (crc ChatRoomController) Create(c *fiber.Ctx) error {
