@@ -5,8 +5,9 @@ import (
 )
 
 type WsConnection struct {
-	Conn *websocket.Conn
-	Send chan []byte
+	Conn   *websocket.Conn
+	Send   chan []byte
+	ChatId string
 }
 
 func GetConnectionStore() *[]*WsConnection {

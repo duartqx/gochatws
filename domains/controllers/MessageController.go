@@ -37,8 +37,9 @@ func NewMessageController(
 func (mc *MessageController) WebSocketChat() func(*fiber.Ctx) error {
 	return websocket.New(func(c *websocket.Conn) {
 		conn := &w.WsConnection{
-			Conn: c,
-			Send: make(chan []byte),
+			Conn:   c,
+			Send:   make(chan []byte),
+			ChatId: c.Params("chat_id"),
 		}
 		*mc.connStore = append(*mc.connStore, conn)
 
@@ -86,7 +87,9 @@ func (mc *MessageController) WebSocketChat() func(*fiber.Ctx) error {
 
 				// Broadcast the message to all connections
 				for _, c := range *mc.connStore {
-					c.Send <- msgJson
+					if c.ChatId == conn.ChatId {
+						c.Send <- msgJson
+					}
 				}
 			}
 		}(conn)
