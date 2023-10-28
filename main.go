@@ -14,6 +14,7 @@ import (
 	"github.com/duartqx/gochatws/core/sessions"
 
 	as "github.com/duartqx/gochatws/core/auth/service"
+	w "github.com/duartqx/gochatws/core/ws"
 	c "github.com/duartqx/gochatws/domains/controllers"
 	ac "github.com/duartqx/gochatws/domains/controllers/auth"
 	r "github.com/duartqx/gochatws/domains/repositories"
@@ -21,19 +22,25 @@ import (
 	"github.com/duartqx/gochatws/domains/utils"
 )
 
+func getTemplateEngine() *html.Engine {
+	templEngine := html.New("./domains/views", ".html")
+	templEngine.AddFuncMap(map[string]interface{}{
+		"GetChatCategories": utils.GetChatCategories,
+	})
+	return templEngine
+}
+
 func setApp(db *sqlx.DB) *fiber.App {
 
 	app := fiber.New(
-		fiber.Config{
-			Views:       html.New("./domains/views", ".html"),
-			ViewsLayout: "base",
-		},
+		fiber.Config{Views: getTemplateEngine(), ViewsLayout: "base"},
 	)
 
 	// Raw dependencies
 	secret := []byte("secret")
 	v := validator.New()
 	sessionStore := sessions.NewSessionStore()
+	connStore := w.GetConnectionStore()
 
 	// Repositories
 	userRepository := r.NewUserRepository(db)
@@ -52,7 +59,7 @@ func setApp(db *sqlx.DB) *fiber.App {
 	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
 	chatRoomController := c.NewChatRoomController(chatRoomService)
-	msgController := c.NewMessageController(chatRoomRepository, messageService)
+	msgController := c.NewMessageController(chatRoomRepository, messageService, connStore)
 
 	// Logger middleware
 	app.Use(
@@ -122,19 +129,15 @@ func setApp(db *sqlx.DB) *fiber.App {
 			"/",
 			authController.AuthMiddlewareWithRedirect(),
 			func(c *fiber.Ctx) error {
-				user, err := utils.GetUserFromLocals(c.Locals("user"))
-				if err != nil {
-					return c.Render("404", fiber.Map{"Title": "404 Not Found"})
-				}
-				return c.Render("index", fiber.Map{
-					"Title": "Index",
-					"User":  user,
-				})
-			}).
+				return c.Render(
+					"index",
+					utils.BuildTemplateContext(c, &fiber.Map{"Title": "Index"}))
+			},
+		).
 		Get(
 			"/chat/:id<int>",
 			authController.AuthMiddlewareWithRedirect(),
-			chatRoomController.Chat,
+			chatRoomController.ChatView,
 		).
 		// Unauthenticated endpoints
 		Get(
@@ -160,6 +163,12 @@ func main() {
 		log.Fatalln(err)
 	}
 	defer db.Close()
+
+	// Enforces FK constraints
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	app := setApp(db)
 
