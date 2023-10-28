@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,12 +42,17 @@ func (crc ChatRoomController) ChatView(c *fiber.Ctx) error {
 	if !ok {
 		return c.Render("404", fiber.Map{"Title": "404 Not Found"})
 	}
+
+	endpoint := fmt.Sprintf(
+		"ws://%s/api/chat/%d/ws/connect", c.Hostname(), chat.GetId(),
+	)
+
 	return c.Render(
 		"chat",
 		utils.BuildTemplateContext(c, &fiber.Map{
-			"Title":  chat.GetName(),
-			"ChatId": chat.GetId(),
-			"Host":   "127.0.0.1:8000/",
+			"Title":      chat.GetName(),
+			"ChatId":     chat.GetId(),
+			"WsEndpoint": endpoint,
 		}),
 	)
 }

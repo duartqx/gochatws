@@ -61,7 +61,7 @@
            * @throws {Error} If the WebSocket connection cannot be established.
            */
           initWebSocket() {
-            this.socket = new WebSocket('ws://{{.Host}}api/chat/{{.ChatId}}/ws/connect');
+            this.socket = new WebSocket('{{.WsEndpoint}}');
             this.socket.addEventListener('message', (event) => {
               const message = JSON.parse(event.data);
               this.messages.push(message);
