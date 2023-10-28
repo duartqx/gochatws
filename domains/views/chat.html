@@ -5,72 +5,137 @@
       <div
         id="chat-messages"
         class="card-text px-4 mb-3"
-        style="height: 70vh; overflow-y: scroll;"
+        style="height: 76vh"
         x-data="{
           isLoading: false,
           messages: [],
+          newMessage: '',
+          socket: null,
+          /**
+           * Fetches messages from a specific chat and assigns them to a messages array.
+           * Sets isLoading to false after the fetch operation.
+           *
+           * @async
+           * @function get
+           * @throws {Error} When unable to fetch the messages.
+           * @return {Promise<void>} No value is returned but the messages array and isLoading flag are updated.
+           */
           async get() {
             this.isLoading = true;
             fetch('/api/chat/{{.ChatId}}/msg')
-              .then(res => res.json())
-              .then(res => { this.messages = res; this.isLoading = false; })
+              .then((res) => res.json())
+              .then((res) => {
+                this.messages = res;
+                this.isLoading = false;
+              });
           },
-          scrollToBottom(elem) {
-            return () => { elem.scrollTop = elem.scrollHeight }
-          },
+
+          /**
+           * Observes changes in the DOM and scrolls to the bottom of the element when changes occur.
+           *
+           * @function observeDOMChanges
+           * @this {object} The context of the function, which should contain the `scrollToBottom` method.
+           * @throws {Error} If the element with id 'chat-messages' is not found.
+           */
           observeDOMChanges() {
-            let elem = htmx.find('#chat-messages');
-            let observer = new MutationObserver(this.scrollToBottom(elem));
+            const scrollToBottom = (elem) => {
+              return () => {
+                elem.scrollTop = elem.scrollHeight;
+              };
+            };
+            let elem = htmx.find('#chat-messages-overflow');
+            let observer = new MutationObserver(scrollToBottom(elem));
             observer.observe(elem, { childList: true, subtree: true });
+          },
+
+          /**
+           * Initializes a WebSocket connection and listens for messages from the server.
+           * When a message is received, it is appended to the messages array.
+           *
+           * @function initWebSocket
+           * @this {object} The context of the function, which should contain the `messages` array and the `socket` property.
+           * @throws {Error} If the WebSocket connection cannot be established.
+           */
+          initWebSocket() {
+            this.socket = new WebSocket('ws://{{.Host}}api/chat/{{.ChatId}}/ws/connect');
+            this.socket.addEventListener('message', (event) => {
+              const message = JSON.parse(event.data);
+              this.messages.push(message);
+            });
+          },
+
+          /**
+           * Sends a new message through the WebSocket connection if the new message is not empty
+           * and the WebSocket connection is open. After the message is sent, the new message input field is cleared.
+           *
+           * @function sendMessage
+           * @this {object} The context of the function, which should contain the `newMessage` string and the `socket` property.
+           * @throws {Error} If the WebSocket connection is not open.
+           */
+          sendMessage() {
+            if (
+              this.newMessage !== '' &&
+              this.socket.readyState === WebSocket.OPEN
+            ) {
+              this.socket.send(this.newMessage);
+              this.newMessage = '';
+            }
           }
         }"
         x-init="
           // Fetches the messages for this page
-          await get(); observeDOMChanges();
+          await get(); observeDOMChanges(); initWebSocket();
         "
         x-transition
       >
-        <ul class="list-unstyled d-flex flex-column justify-content-end" style="height:98%">
-          <template x-for="msg in messages">
-            <div
-              class="card mt-2 w-50"
-              :class="msg.user.id == {{.User.GetId}} && 'bg-body-secondary ms-auto'"
-            >
-              <li class="card-body d-flex align-items-center">
-                <div class="col-xs-2">
+        <div id="chat-messages-overflow" style="height: 70vh; overflow-y: scroll">
+          <ul
+            id="main-chat-body"
+            class="list-unstyled d-flex flex-column justify-content-end"
+          >
+            <template x-for="(msg, idx) in messages" :key="idx">
+              <div
+                class="card mt-2 w-50"
+                :class="msg.user.id == {{.User.GetId}} && 'bg-body-secondary ms-auto'"
+              >
+                <li class="card-body d-flex align-items-center">
+                  <div class="col-xs-2">
+                    <div
+                      class="rounded-circle"
+                      alt="Avatar"
+                      style="width: 40px; height: 40px; background-color: pink"
+                      x-bind:title="msg.user.name"
+                    ></div>
+                  </div>
                   <div
-                    class="rounded-circle"
-                    alt="Avatar"
-                    style="width: 40px; height: 40px; background-color: pink"
-                    x-bind:title="msg.user.name"
+                    x-text="msg.text"
+                    x-bind:title="new Date(msg.created_at)"
+                    class="mx-4 col-xs-10"
                   ></div>
-                </div>
-                <div
-                  x-text="msg.text"
-                  x-bind:title="new Date(msg.created_at)"
-                  class="mx-4 col-xs-10"
-                ></div>
-              </li>
+                </li>
+              </div>
+            </template>
+          </ul>
+        </div>
+        <div class="col-xs-12 mt-3">
+          <form @submit.prevent="sendMessage">
+            <div class="input-group w-100">
+              <button type="submit" class="input-group-text">></button>
+              <div class="form-floating">
+                <input
+                  type="text"
+                  class="form-control text-body-secondary"
+                  id="sendMessage"
+                  placeholder="Type"
+                  name="sendMessage"
+                  x-model="newMessage"
+                 autocomplete="off"
+                />
+                <label for="sendMessage">Type</label>
+              </div>
             </div>
-          </template>
-        </ul>
-      </div>
-      <div class="col-xs-12 mt-3">
-        <form>
-          <div class="input-group w-100">
-            <span class="input-group-text" role="button">></span>
-            <div class="form-floating">
-              <input
-                type="text"
-                class="form-control text-body-secondary"
-                id="message"
-                placeholder="Type"
-                name="message"
-              />
-              <label for="message">Type</label>
-            </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   </div>
