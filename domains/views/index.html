@@ -21,6 +21,9 @@
     x-cloak
     x-transition
   >
+    <template
+      x-on:chat-created-dispatch.window="chats.push($event.detail)"
+    ></template>
     <div class="row g-5 my-1 mx-2 text-center">
       <ul class="list-unstyled mt-3 mb-4 row">
         <!-- For loop with alpine -->
@@ -36,13 +39,14 @@
                 class="card-body h-50 d-flex align-items-center justify-content-center"
               >
                 <button
+                  :hx-get="`/chat/${chat.id}`"
                   type="button"
                   class="w-100 btn btn-lg btn-outline-primary"
-                  x-bind:hx-get="chat.href"
                   hx-target="main#main"
                   hx-select="#content"
                   hx-swap="innerHTML transition:true"
                   hx-push-url="true"
+                  x-init="htmx.process($el)"
                 >
                   Join Chat
                 </button>
