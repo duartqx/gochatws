@@ -22,36 +22,34 @@ async function fetchHtml(url) {
 }
 
 /**
- * Fetches the HTML content from a specified URL, starts a view transition,
- * processes the HTML content with HTMX, and dispatches an alert.
+ * Fetches data from the provided URL and dispatches an alert event.
  *
  * @async
  * @function fetchTransitionAndDispatches
- * @param {string} url - The URL to fetch the HTML content from.
- * @param {Object} detail - The detail of the alert to dispatch.
- * @returns {Promise<void>} A promise that resolves when the view transition
- * is finished and the alert is dispatched.
+ * @param {string} url - The URL to fetch data from.
+ * @param {Object} detail - The detail object passed to the alert event.
+ * @returns {Promise<void>} A promise that resolves when the operation is complete.
+ * @see {@link https://htmx.org/docs/#ajax} htmx.ajax
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Window/pushState} window.history.pushState
  */
 async function fetchTransitionAndDispatches(url, detail) {
-  const htmlData = await fetchHtml(url);
-
-  const transition = document.startViewTransition(() => {
-    document.documentElement.innerHTML = htmlData;
-  });
-  await transition.finished;
-  htmx.process(document.documentElement);
-  window.history.pushState({}, "", "/");
+  await htmx.ajax("GET", url, { swap: "transition:true" });
+  window.history.pushState({}, "", url);
   dispatchAlert(detail);
 }
 
 /**
- * Dispatches an alert on '#generic-alert'
+ * Dispatches a custom alert event after a delay.
  *
  * @function dispatchAlert
- * @param {Object} detail - The detail of the alert to dispatch.
+ * @param {Object} detail - The detail object passed to the alert event.
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout} setTimeout
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/dispatchEvent} dispatchEvent
  */
 function dispatchAlert(detail) {
-  htmx
-    .find("#generic-alert")
-    .dispatchEvent(new CustomEvent("alert-message", detail));
+  setTimeout(() => {
+    htmx
+      .find("#generic-alert")
+      .dispatchEvent(new CustomEvent("alert-message", detail));
+  }, 500);
 }
