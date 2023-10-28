@@ -49,6 +49,7 @@ func (crc ChatRoomController) Chat(c *fiber.Ctx) error {
 		"Title":  chat.GetName(),
 		"ChatId": chat.GetId(),
 		"User":   user,
+		"Host":   "127.0.0.1:8000/",
 	})
 }
 
