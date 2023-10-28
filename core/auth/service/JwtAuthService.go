@@ -116,10 +116,19 @@ func (jas JwtAuthService) ValidateAuth(authorization, cookie string) (interface{
 
 func (jas JwtAuthService) Login(user i.User) *h.HttpResponse {
 
+	invalidCookie := &h.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Expires:  time.Now().Add(time.Hour * -3),
+		HTTPOnly: true,
+		Secure:   true,
+	}
+
 	if user.GetUsername() == "" || user.GetPassword() == "" {
 		return &h.HttpResponse{
 			Status: http.StatusBadRequest,
 			Body:   e.BadRequestError,
+			Cookie: invalidCookie,
 		}
 	}
 
@@ -128,6 +137,7 @@ func (jas JwtAuthService) Login(user i.User) *h.HttpResponse {
 		return &h.HttpResponse{
 			Status: http.StatusUnauthorized,
 			Body:   e.WrongUsernameOrPasswordError,
+			Cookie: invalidCookie,
 		}
 	}
 
@@ -137,6 +147,7 @@ func (jas JwtAuthService) Login(user i.User) *h.HttpResponse {
 		return &h.HttpResponse{
 			Status: http.StatusUnauthorized,
 			Body:   e.WrongUsernameOrPasswordError,
+			Cookie: invalidCookie,
 		}
 	}
 
@@ -155,6 +166,7 @@ func (jas JwtAuthService) Login(user i.User) *h.HttpResponse {
 		return &h.HttpResponse{
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
+			Cookie: invalidCookie,
 		}
 	}
 
@@ -164,6 +176,7 @@ func (jas JwtAuthService) Login(user i.User) *h.HttpResponse {
 		return &h.HttpResponse{
 			Status: http.StatusInternalServerError,
 			Body:   e.InternalError,
+			Cookie: invalidCookie,
 		}
 	}
 
