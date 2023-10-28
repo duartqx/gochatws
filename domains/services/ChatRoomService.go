@@ -35,18 +35,7 @@ func (crs ChatRoomService) All() *h.HttpResponse {
 			Body:   e.InternalError,
 		}
 	}
-	results := []ChatApiResponse{}
-	for _, chat := range *chatRooms {
-		result := ChatApiResponse{
-			Category: chat.GetCategory(),
-			Creator:  chat.GetCreator(),
-			Href:     fmt.Sprintf("/chat/%d", chat.GetId()),
-			Id:       chat.GetId(),
-			Name:     chat.GetName(),
-		}
-		results = append(results, result)
-	}
-	return &h.HttpResponse{Status: http.StatusOK, Body: &results}
+	return &h.HttpResponse{Status: http.StatusOK, Body: chatRooms}
 }
 
 func (crs ChatRoomService) One(paramId string) *h.HttpResponse {
