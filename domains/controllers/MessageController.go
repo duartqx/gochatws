@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +21,7 @@ type MessageController struct {
 	chatRepository i.ChatRepository
 	messageService *s.MessageService
 	connStore      *[]*w.WsConnection
+	mutex          *sync.Mutex
 }
 
 func NewMessageController(
@@ -31,6 +33,7 @@ func NewMessageController(
 		chatRepository: chatRepository,
 		messageService: messageService,
 		connStore:      connStore,
+		mutex:          &sync.Mutex{},
 	}
 }
 
@@ -93,16 +96,22 @@ func (mc *MessageController) WebSocketChat() func(*fiber.Ctx) error {
 				}
 			}
 		}(conn)
+
 		// Write to the WebSocket from the broadcast channel
 		for {
 			select {
 			case msg, ok := <-conn.Send:
+
+				mc.mutex.Lock()
+
 				if !ok {
 					conn.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 					return
 				}
 
 				conn.Conn.WriteMessage(websocket.TextMessage, msg)
+
+				mc.mutex.Unlock()
 			}
 		}
 	})
