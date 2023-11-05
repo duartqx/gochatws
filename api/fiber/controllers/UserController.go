@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/duartqx/gochatws/api/utils"
+	"github.com/duartqx/gochatws/api/fiber/utils"
 	e "github.com/duartqx/gochatws/application/errors"
 	s "github.com/duartqx/gochatws/application/services"
 	u "github.com/duartqx/gochatws/domains/entities/user"

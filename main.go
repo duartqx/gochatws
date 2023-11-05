@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	a "github.com/duartqx/gochatws/api"
+	a "github.com/duartqx/gochatws/api/fiber"
 	r "github.com/duartqx/gochatws/infrastructure/repositories/sqlite"
 )
 

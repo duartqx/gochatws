@@ -9,35 +9,31 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/duartqx/gochatws/api/utils"
-	w "github.com/duartqx/gochatws/api/ws"
+	"github.com/duartqx/gochatws/api/fiber/utils"
+	w "github.com/duartqx/gochatws/api/fiber/ws"
 	e "github.com/duartqx/gochatws/application/errors"
 	s "github.com/duartqx/gochatws/application/services"
 	m "github.com/duartqx/gochatws/domains/entities/message"
-	r "github.com/duartqx/gochatws/domains/repositories"
 )
 
 type MessageController struct {
-	chatRepository r.ChatRepository
 	messageService *s.MessageService
 	connStore      *[]*w.WsConnection
 	mutex          *sync.Mutex
 }
 
 func NewMessageController(
-	chatRepository r.ChatRepository,
 	messageService *s.MessageService,
 	connStore *[]*w.WsConnection,
 ) *MessageController {
 	return &MessageController{
-		chatRepository: chatRepository,
 		messageService: messageService,
 		connStore:      connStore,
 		mutex:          &sync.Mutex{},
 	}
 }
 
-func (mc *MessageController) WebSocketChat() func(*fiber.Ctx) error {
+func (mc *MessageController) WebSocketChatController() func(*fiber.Ctx) error {
 	return websocket.New(func(c *websocket.Conn) {
 		conn := &w.WsConnection{
 			Conn:   c,
@@ -51,7 +47,7 @@ func (mc *MessageController) WebSocketChat() func(*fiber.Ctx) error {
 			return
 		}
 
-		chat, err := mc.chatRepository.FindByParamId(c.Params("chat_id"))
+		chat, err := mc.messageService.FindChatByParamId(c.Params("chat_id"))
 		if err != nil {
 			return
 		}

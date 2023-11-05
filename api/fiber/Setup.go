@@ -10,13 +10,13 @@ import (
 
 	"github.com/duartqx/gochatws/infrastructure/sessions"
 
-	c "github.com/duartqx/gochatws/api/controllers"
-	ac "github.com/duartqx/gochatws/api/controllers/auth"
+	c "github.com/duartqx/gochatws/api/fiber/controllers"
+	ac "github.com/duartqx/gochatws/api/fiber/controllers/auth"
 
 	s "github.com/duartqx/gochatws/application/services"
 
-	"github.com/duartqx/gochatws/api/utils"
-	w "github.com/duartqx/gochatws/api/ws"
+	"github.com/duartqx/gochatws/api/fiber/utils"
+	w "github.com/duartqx/gochatws/api/fiber/ws"
 	r "github.com/duartqx/gochatws/infrastructure/repositories/sqlite"
 )
 
@@ -50,13 +50,13 @@ func Setup(db *sqlx.DB, secret []byte) *fiber.App {
 	jwtAuthService := s.NewJwtAuthService(userRepository, &secret, sessionStore)
 	userService := s.NewUserService(userRepository, v)
 	chatRoomService := s.NewChatRoomService(chatRoomRepository)
-	messageService := s.NewMessageService(messageRepository)
+	messageService := s.NewMessageService(messageRepository, chatRoomRepository)
 
 	// Controllers
 	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
 	chatRoomController := c.NewChatRoomController(chatRoomService)
-	msgController := c.NewMessageController(chatRoomRepository, messageService, connStore)
+	msgController := c.NewMessageController(messageService, connStore)
 
 	// Logger middleware
 	app.Use(
@@ -117,7 +117,7 @@ func Setup(db *sqlx.DB, secret []byte) *fiber.App {
 			}
 			return fiber.ErrUpgradeRequired
 		}).
-		Get("/ws/connect", msgController.WebSocketChat())
+		Get("/ws/connect", msgController.WebSocketChatController())
 
 	// HTML Template endpoints
 	app.

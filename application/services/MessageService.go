@@ -6,17 +6,23 @@ import (
 	e "github.com/duartqx/gochatws/application/errors"
 	h "github.com/duartqx/gochatws/application/http"
 
+	c "github.com/duartqx/gochatws/domains/entities/chatroom"
 	m "github.com/duartqx/gochatws/domains/entities/message"
 	r "github.com/duartqx/gochatws/domains/repositories"
 )
 
 type MessageService struct {
-	messageRepository r.MessageRepository
+	messageRepository  r.MessageRepository
+	chatRoomRepository r.ChatRepository
 }
 
-func NewMessageService(messageRepository r.MessageRepository) *MessageService {
+func NewMessageService(
+	messageRepository r.MessageRepository,
+	chatRoomRepository r.ChatRepository,
+) *MessageService {
 	return &MessageService{
-		messageRepository: messageRepository,
+		messageRepository:  messageRepository,
+		chatRoomRepository: chatRoomRepository,
 	}
 }
 
@@ -40,4 +46,8 @@ func (ms MessageService) Create(msg m.Message) *h.HttpResponse {
 		}
 	}
 	return &h.HttpResponse{Status: http.StatusCreated, Body: msg}
+}
+
+func (ms MessageService) FindChatByParamId(id string) (c.ChatRoom, error) {
+	return ms.chatRoomRepository.FindByParamId(id)
 }
