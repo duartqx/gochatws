@@ -1,10 +1,9 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"sync"
+	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -18,31 +17,22 @@ import (
 
 type MessageController struct {
 	messageService *s.MessageService
-	connStore      *[]*w.WsConnection
-	mutex          *sync.Mutex
+	service        *w.WebSocketService
 }
 
 func NewMessageController(
 	messageService *s.MessageService,
-	connStore *[]*w.WsConnection,
+	service *w.WebSocketService,
 ) *MessageController {
 	return &MessageController{
 		messageService: messageService,
-		connStore:      connStore,
-		mutex:          &sync.Mutex{},
+		service:        service,
 	}
 }
 
 func (mc *MessageController) WebSocketChatController() func(*fiber.Ctx) error {
 	return websocket.New(func(c *websocket.Conn) {
-		conn := &w.WsConnection{
-			Conn:   c,
-			Send:   make(chan []byte),
-			ChatId: c.Params("chat_id"),
-		}
-		*mc.connStore = append(*mc.connStore, conn)
-
-		creator, err := utils.GetUserFromLocals(c.Locals("user"))
+		user, err := utils.GetUserFromLocals(c.Locals("user"))
 		if err != nil {
 			return
 		}
@@ -52,64 +42,21 @@ func (mc *MessageController) WebSocketChatController() func(*fiber.Ctx) error {
 			return
 		}
 
-		go func(conn *w.WsConnection) {
-			defer func() {
-				conn.Conn.Close()
-				// Remove the connection from the global list when done
-				for i, c := range *mc.connStore {
-					if c == conn {
-						*mc.connStore = append((*mc.connStore)[:i], (*mc.connStore)[i+1:]...)
-						break
-					}
-				}
-			}()
+		finish := make(chan bool, 1)
 
-			for {
-				_, msg, err := conn.Conn.ReadMessage()
-				if err != nil {
-					break
-				}
+		go mc.service.Listen(c, finish, user.GetId(), chat.GetId())
 
-				message := &m.MessageModel{Text: string(msg)}
-
-				message.SetChatId(chat.GetId()).SetUserId(creator.GetId())
-
-				response := mc.messageService.Create(message)
-				if response.Status != http.StatusCreated {
-					break
-				}
-
-				msgJson, err := json.Marshal(message)
-				if err != nil {
-					break
-				}
-
-				// Broadcast the message to all connections
-				for _, c := range *mc.connStore {
-					if c.ChatId == conn.ChatId {
-						c.Send <- msgJson
-					}
-				}
-			}
-		}(conn)
-
-		// Write to the WebSocket from the broadcast channel
 		for {
 			select {
-			case msg, ok := <-conn.Send:
-
-				mc.mutex.Lock()
-
-				if !ok {
-					conn.Conn.WriteMessage(websocket.CloseMessage, []byte{})
-					return
-				}
-
-				conn.Conn.WriteMessage(websocket.TextMessage, msg)
-
-				mc.mutex.Unlock()
+			case _ = <-finish:
+				return
+			default:
+				// This case will run if the 'finish' channel is not ready to send
+				// You can add a sleep here to prevent busy waiting
+				time.Sleep(500 * time.Millisecond)
 			}
 		}
+
 	})
 }
 

@@ -37,7 +37,6 @@ func Setup(db *sqlx.DB, secret []byte) *fiber.App {
 	// Raw dependencies
 	v := validator.New()
 	sessionStore := sessions.NewSessionStore()
-	connStore := w.GetConnectionStore()
 
 	// Repositories
 	userRepository := r.NewUserRepository(db)
@@ -51,12 +50,13 @@ func Setup(db *sqlx.DB, secret []byte) *fiber.App {
 	userService := s.NewUserService(userRepository, v)
 	chatRoomService := s.NewChatRoomService(chatRoomRepository)
 	messageService := s.NewMessageService(messageRepository, chatRoomRepository)
+	webSocketService := w.GetWebSocketService(messageRepository)
 
 	// Controllers
 	userController := c.NewUserController(userService)
 	authController := ac.NewJwtAuthController(jwtAuthService)
 	chatRoomController := c.NewChatRoomController(chatRoomService)
-	msgController := c.NewMessageController(messageService, connStore)
+	msgController := c.NewMessageController(messageService, webSocketService)
 
 	// Logger middleware
 	app.Use(
