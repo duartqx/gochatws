@@ -48,7 +48,7 @@ func (mc *MessageController) WebSocketChatController() func(*fiber.Ctx) error {
 
 		for {
 			select {
-			case _ = <-finish:
+			case <-finish:
 				return
 			default:
 				// This case will run if the 'finish' channel is not ready to send
