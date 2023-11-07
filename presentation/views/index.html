@@ -39,6 +39,7 @@
                 class="card-body h-50 d-flex align-items-center justify-content-center"
               >
                 <button
+                  x-init="htmx.process($el)"
                   :hx-get="`/chat/${chat.id}`"
                   type="button"
                   class="w-100 btn btn-lg btn-outline-primary"
@@ -46,7 +47,6 @@
                   hx-select="#content"
                   hx-swap="innerHTML transition:true"
                   hx-push-url="true"
-                  x-init="htmx.process($el)"
                 >
                   Join Chat
                 </button>

@@ -39,6 +39,18 @@
               data-bs-toggle="modal"
               data-bs-target="#create-chat-modal"
               title="Create a new Chat Room"
+              x-data="{
+                isHome: window.location.pathname === '/',
+                update() {
+                  return () => {
+                    this.isHome = window.location.pathname === '/'
+                  }
+                },
+              }"
+              x-init="
+                window.addEventListener('htmx:pushedIntoHistory', update())
+              "
+              x-show="isHome"
               >+</a
             >
           </li>
