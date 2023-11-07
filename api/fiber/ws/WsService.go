@@ -29,7 +29,7 @@ func (wc *WebSocketService) Listen(conn *websocket.Conn, finish chan bool, userI
 	defer func() {
 		broadcaster.Mutex.Lock()
 		conn.Close()
-		close(finish)
+		defer close(finish)
 		for i, c := range *broadcaster.Conns {
 			if c == conn {
 				*broadcaster.Conns = append(
