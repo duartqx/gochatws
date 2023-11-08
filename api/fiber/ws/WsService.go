@@ -10,36 +10,24 @@ import (
 )
 
 type WebSocketService struct {
-	Conns             *map[string]*WebSocketBroadcaster
+	ConnsMap          *map[int]*WebSocketBroadcaster
 	messageRepository r.MessageRepository
 }
 
 func GetWebSocketService(messageRepository r.MessageRepository) *WebSocketService {
 	return &WebSocketService{
-		Conns:             &map[string]*WebSocketBroadcaster{},
+		ConnsMap:          &map[int]*WebSocketBroadcaster{},
 		messageRepository: messageRepository,
 	}
 }
 
 func (wc *WebSocketService) Listen(conn *websocket.Conn, finish chan bool, userId, chatId int) {
-	broadcaster := wc.GetBroadcaster(conn.Params("chat_id"))
+
+	broadcaster := wc.getBroadcaster(chatId)
 	*broadcaster.Conns = append(*broadcaster.Conns, conn)
 
 	// Defer removing the connection from the pool
-	defer func() {
-		broadcaster.Mutex.Lock()
-		conn.Close()
-		defer close(finish)
-		for i, c := range *broadcaster.Conns {
-			if c == conn {
-				*broadcaster.Conns = append(
-					(*broadcaster.Conns)[:i], (*broadcaster.Conns)[i+1:]...,
-				)
-				break
-			}
-		}
-		broadcaster.Mutex.Unlock()
-	}()
+	defer wc.close(broadcaster, conn, finish)
 
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -65,12 +53,24 @@ func (wc *WebSocketService) Listen(conn *websocket.Conn, finish chan bool, userI
 	}
 }
 
-func (wc WebSocketService) GetBroadcaster(id string) *WebSocketBroadcaster {
+func (wc *WebSocketService) getBroadcaster(id int) *WebSocketBroadcaster {
 	var broadcaster *WebSocketBroadcaster
-	broadcaster, ok := (*wc.Conns)[id]
+	broadcaster, ok := (*wc.ConnsMap)[id]
 	if !ok {
-		broadcaster = NewWebSocketBroadcaster()
-		(*wc.Conns)[id] = broadcaster
+		broadcaster = NewWebSocketBroadcaster(id)
+		(*wc.ConnsMap)[id] = broadcaster
 	}
 	return broadcaster
+}
+
+func (wc *WebSocketService) close(
+	broadcaster *WebSocketBroadcaster,
+	conn *websocket.Conn,
+	finish chan bool,
+) {
+	defer close(finish)
+	broadcaster.Close(conn)
+	if broadcaster.Length() == 0 {
+		delete((*wc.ConnsMap), broadcaster.GetKey())
+	}
 }
