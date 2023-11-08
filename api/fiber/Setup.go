@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -20,34 +22,90 @@ import (
 	r "github.com/duartqx/gochatws/infrastructure/repositories/sqlite"
 )
 
-func getTemplateEngine() *html.Engine {
-	templEngine := html.New("./presentation/views", ".html")
+type App struct {
+	app          *fiber.App
+	db           *sqlx.DB
+	secret       *[]byte
+	port         string
+	viewsBase    string
+	viewsPath    string
+	staticPath   string
+	sessionStore *sessions.SessionStore
+	v            *validator.Validate
+}
+
+func GetNewAppBuilder() *App {
+	return &App{}
+}
+
+func (a *App) SetDb(db *sqlx.DB) *App {
+	a.db = db
+	return a
+}
+
+func (a *App) SetPort(port string) *App {
+	if !strings.HasPrefix(port, ":") {
+		port = ":" + port
+	}
+	a.port = port
+	return a
+}
+
+func (a *App) SetViewsPath(viewsPath string) *App {
+	a.viewsPath = viewsPath
+	return a
+}
+
+func (a *App) SetViewsBase(viewsBase string) *App {
+	a.viewsBase = viewsBase
+	return a
+}
+
+func (a *App) SetStaticPath(staticPath string) *App {
+	a.staticPath = staticPath
+	return a
+}
+
+func (a *App) SetSecret(secret string) *App {
+	s := []byte(secret)
+	a.secret = &s
+	return a
+}
+
+func (a *App) SetValidator(v *validator.Validate) *App {
+	a.v = v
+	return a
+}
+
+func (a *App) SetSessionStore(sessionStore *sessions.SessionStore) *App {
+	a.sessionStore = sessionStore
+	return a
+}
+
+func (a App) getTemplateEngine() *html.Engine {
+	templEngine := html.New(a.viewsPath, ".html")
 	templEngine.AddFuncMap(map[string]interface{}{
 		"GetChatCategories": utils.GetChatCategories,
 	})
 	return templEngine
 }
 
-func Setup(db *sqlx.DB, secret []byte) *fiber.App {
+func (a *App) Build() *App {
 
-	app := fiber.New(
-		fiber.Config{Views: getTemplateEngine(), ViewsLayout: "base"},
+	a.app = fiber.New(
+		fiber.Config{Views: a.getTemplateEngine(), ViewsLayout: a.viewsBase},
 	)
 
-	// Raw dependencies
-	v := validator.New()
-	sessionStore := sessions.NewSessionStore()
-
 	// Repositories
-	userRepository := r.NewUserRepository(db)
-	chatRoomRepository := r.NewChatRoomRepository(db, userRepository)
+	userRepository := r.NewUserRepository(a.db)
+	chatRoomRepository := r.NewChatRoomRepository(a.db, userRepository)
 	messageRepository := r.NewMessageRepository(
-		db, userRepository, chatRoomRepository,
+		a.db, userRepository, chatRoomRepository,
 	)
 
 	// Services
-	jwtAuthService := s.NewJwtAuthService(userRepository, &secret, sessionStore)
-	userService := s.NewUserService(userRepository, v)
+	jwtAuthService := s.NewJwtAuthService(userRepository, a.secret, a.sessionStore)
+	userService := s.NewUserService(userRepository, a.v)
 	chatRoomService := s.NewChatRoomService(chatRoomRepository)
 	messageService := s.NewMessageService(messageRepository, chatRoomRepository)
 	webSocketService := w.GetWebSocketService(messageRepository)
@@ -59,17 +117,17 @@ func Setup(db *sqlx.DB, secret []byte) *fiber.App {
 	msgController := c.NewMessageController(messageService, webSocketService)
 
 	// Logger middleware
-	app.Use(
+	a.app.Use(
 		logger.New(
 			logger.Config{TimeFormat: "2006-01-02 15:04:05"},
 		),
 	)
 
 	// Static files (js, css, images)
-	app.Static("/", "./presentation/static")
+	a.app.Static("/", a.staticPath)
 
 	// Groups with prefix /api
-	apiGroup := app.Group("/api")
+	apiGroup := a.app.Group("/api")
 
 	// Auth endpoints
 	apiGroup.
@@ -120,7 +178,7 @@ func Setup(db *sqlx.DB, secret []byte) *fiber.App {
 		Get("/ws/connect", msgController.WebSocketChatController())
 
 	// HTML Template endpoints
-	app.
+	a.app.
 		// Authenticated endpoints
 		Get(
 			"/",
@@ -150,5 +208,16 @@ func Setup(db *sqlx.DB, secret []byte) *fiber.App {
 				return c.Render("register", fiber.Map{"Title": "Register"})
 			})
 
-	return app
+	return a
+}
+
+func (a App) Listen() error {
+	if err := a.app.Listen(a.port); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a App) Shutdown() error {
+	return a.app.Shutdown()
 }

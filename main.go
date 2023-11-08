@@ -5,8 +5,11 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/go-playground/validator/v10"
+
 	a "github.com/duartqx/gochatws/api/fiber"
 	r "github.com/duartqx/gochatws/infrastructure/repositories/sqlite"
+	"github.com/duartqx/gochatws/infrastructure/sessions"
 )
 
 func main() {
@@ -17,10 +20,20 @@ func main() {
 	}
 	defer db.Close()
 
-	app := a.Setup(db, []byte("secret"))
+	app := a.
+		GetNewAppBuilder().
+		SetDb(db).
+		SetPort(":8000").
+		SetViewsPath("./presentation/views").
+		SetStaticPath("./presentation/static").
+		SetViewsBase("base").
+		SetSecret("secret").
+		SetValidator(&validator.Validate{}).
+		SetSessionStore(sessions.NewSessionStore()).
+		Build()
 
 	go func() {
-		if err := app.Listen(":8000"); err != nil {
+		if err := app.Listen(); err != nil {
 			log.Println(err)
 		}
 	}()
