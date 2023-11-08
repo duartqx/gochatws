@@ -214,13 +214,13 @@ func (a *App) Build() *App {
 	return a
 }
 
-func (a App) Listen() error {
+func (a *App) Listen() error {
 	if err := a.app.Listen(a.port); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a App) Shutdown() error {
+func (a *App) Shutdown() error {
 	return a.app.Shutdown()
 }
