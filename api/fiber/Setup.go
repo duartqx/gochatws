@@ -35,7 +35,10 @@ type App struct {
 }
 
 func GetNewAppBuilder() *App {
-	return &App{}
+	return &App{
+		sessionStore: sessions.NewSessionStore(),
+		v:            &validator.Validate{},
+	}
 }
 
 func (a *App) SetDb(db *sqlx.DB) *App {

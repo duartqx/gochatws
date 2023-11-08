@@ -5,11 +5,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/go-playground/validator/v10"
-
 	a "github.com/duartqx/gochatws/api/fiber"
 	r "github.com/duartqx/gochatws/infrastructure/repositories/sqlite"
-	"github.com/duartqx/gochatws/infrastructure/sessions"
 )
 
 func main() {
@@ -28,8 +25,6 @@ func main() {
 		SetStaticPath("./presentation/static").
 		SetViewsBase("base").
 		SetSecret("secret").
-		SetValidator(&validator.Validate{}).
-		SetSessionStore(sessions.NewSessionStore()).
 		Build()
 
 	go func() {
