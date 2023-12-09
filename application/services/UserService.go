@@ -45,7 +45,7 @@ func (us UserService) Get(userId int) *h.HttpResponse {
 	return &h.HttpResponse{Status: http.StatusOK, Body: dbUser.Clean()}
 }
 
-func (us UserService) Create(user u.User) *h.HttpResponse {
+func (us UserService) Create(user *u.UserModel) *h.HttpResponse {
 
 	if err := us.validator.Struct(user); err != nil {
 		resp := &h.HttpResponse{

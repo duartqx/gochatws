@@ -7,6 +7,7 @@ import (
 
 	a "github.com/duartqx/gochatws/api/fiber"
 	r "github.com/duartqx/gochatws/infrastructure/repositories/sqlite"
+	"github.com/go-playground/validator/v10"
 )
 
 func main() {
@@ -25,6 +26,7 @@ func main() {
 		SetStaticPath("./presentation/static").
 		SetViewsBase("base").
 		SetSecret("secret").
+		SetValidator(validator.New()).
 		Build()
 
 	go func() {
