@@ -1,79 +1,88 @@
 {{define "create-chat-modal"}}
-<div class="modal fade" tabindex="-1" id="create-chat-modal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Create a Chat Room</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body">
-        <form class="d-flex justify-content-center" id="create-chat-form" @submit.prevent>
-          <div class="row">
-            <div class="mb-3">
-              <label class="form-label text-secondary"
-                >Give the chat a title</label
-              >
-              <input
-                type="text"
-                name="name"
-                class="form-control"
-                placeholder="Chat Name"
-              />
-            </div>
-            <div class="mb-3">
-              <label class="form-label text-secondary"
-                >Give the chat a category:</label
-              >
-              <select name="category" class="form-select">
-                {{range GetChatCategories}}
-                <option value="{{.Id}}">{{.Name}}</option>
-                {{end}}
-              </select>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Close
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          data-bs-dismiss="modal"
-          x-data
-          @click="
-            () => {
-              let { category, ...values } = htmx.values(htmx.find('#create-chat-form'));
-              values.category = parseInt(category);
+<style>
+  ::backdrop {
+   background-color: black;
+   opacity: 0.45;
+  }
+</style>
+<dialog
+  id="create-chat-modal"
+  class="bg-body-tertiary border-dark rounded"
+  x-data="{
+    submit() {
+      let { category, ...values } = htmx.values(htmx.find('#create-chat-form'));
+      values.category = parseInt(category);
 
-              fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(values),
-              })
-                .then((res) => res.json())
-                .then((data) => {
-                  $dispatch('chat-created-dispatch', data);
-                  $dispatch('alert-message', {
-                    message: 'Chat created successfully',
-                    class: 'alert-success'
-                  })
-                });
-            };
-          "
-        >
-          Create
-        </button>
-      </div>
-    </div>
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          $dispatch('chat-created-dispatch', data);
+          $dispatch('alert-message', {
+            message: 'Chat created successfully',
+            class: 'alert-success'
+          })
+        });
+    },
+    close() {
+      $el.close()
+    },
+  }"
+>
+  <div class="d-flex justify-content-between border-bottom pb-2">
+    <h5>Create a Chat Room</h5>
+    <button
+      type="button"
+      class="btn-close"
+      @click="close()"
+    ></button>
   </div>
-</div>
+  <div class="mt-3">
+    <form id="create-chat-form" class="text-start" @submit.prevent>
+      <div class="row">
+        <div class="mb-3">
+          <label class="form-label text-secondary"
+          >Give the chat a title</label
+          >
+          <input
+            type="text"
+            name="name"
+            class="form-control"
+            placeholder="Chat Name"
+          />
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-secondary"
+          >Give the chat a category:</label
+          >
+          <select name="category" class="form-select">
+            {{range GetChatCategories}}
+            <option value="{{.Id}}">{{.Name}}</option>
+            {{end}}
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="d-flex justify-content-end gap-4 border-top pt-3">
+          <button type="button" class="btn btn-secondary" @click="close()">
+            Close
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            @click="submit(); close()"
+          >
+            Create
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+</dialog>
 {{end}}

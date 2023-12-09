@@ -36,8 +36,6 @@
             <a
               class="btn btn-primary ms-auto"
               role="button"
-              data-bs-toggle="modal"
-              data-bs-target="#create-chat-modal"
               title="Create a new Chat Room"
               x-data="{
                 isHome: window.location.pathname === '/',
@@ -51,6 +49,7 @@
                 window.addEventListener('htmx:pushedIntoHistory', update())
               "
               x-show="isHome"
+              @click="htmx.find('#create-chat-modal').showModal()"
               >+</a
             >
           </li>
